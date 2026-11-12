@@ -49,7 +49,7 @@ internal class OAuthManager(
     private var idTokenVerificationLeeway: Int? = null
     private var idTokenVerificationIssuer: String? = null
     private var tokenExchangeMaxRetries: Int? = null
-    private var tokenExchangeRetryDelayMillis: Long? = null
+    private var tokenExchangeRetryDelay: Int? = null
 
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     fun setPKCE(pkce: PKCE?) {
@@ -64,8 +64,8 @@ internal class OAuthManager(
         tokenExchangeMaxRetries = maxRetries
     }
 
-    fun setTokenExchangeRetryDelay(delayMillis: Long?) {
-        tokenExchangeRetryDelayMillis = delayMillis
+    fun setTokenExchangeRetryDelay(seconds: Int?) {
+        tokenExchangeRetryDelay = seconds
     }
 
     fun setIdTokenVerificationIssuer(issuer: String?) {
@@ -126,10 +126,6 @@ internal class OAuthManager(
         }
 
         // response_type=code
-        pkce!!.setNetworkRetry(
-            tokenExchangeMaxRetries ?: PKCE.DEFAULT_MAX_NETWORK_RETRIES,
-            tokenExchangeRetryDelayMillis ?: PKCE.DEFAULT_NETWORK_RETRY_DELAY_MS
-        )
         pkce!!.getToken(
             values[KEY_CODE],
             object : Callback<Credentials, AuthenticationException> {
@@ -226,8 +222,6 @@ internal class OAuthManager(
             auth0 = account,
             idTokenVerificationIssuer = idTokenVerificationIssuer,
             idTokenVerificationLeeway = idTokenVerificationLeeway,
-            tokenExchangeMaxRetries = tokenExchangeMaxRetries,
-            tokenExchangeRetryDelayMillis = tokenExchangeRetryDelayMillis,
             customAuthorizeUrl = this.customAuthorizeUrl,
             dPoPEnabled = dPoP != null
         )
@@ -320,7 +314,7 @@ internal class OAuthManager(
             dPoP?.let {
                 apiClient.useDPoP(context)
             }
-            pkce = PKCE(apiClient, redirectUri, headers)
+            pkce = PKCE(apiClient, redirectUri, headers, tokenExchangeMaxRetries, tokenExchangeRetryDelay)
         }
     }
 
@@ -427,7 +421,5 @@ internal fun OAuthManager.Companion.fromState(
         setPKCE(state.pkce)
         setIdTokenVerificationIssuer(state.idTokenVerificationIssuer)
         setIdTokenVerificationLeeway(state.idTokenVerificationLeeway)
-        setTokenExchangeMaxRetries(state.tokenExchangeMaxRetries)
-        setTokenExchangeRetryDelay(state.tokenExchangeRetryDelayMillis)
     }
 }

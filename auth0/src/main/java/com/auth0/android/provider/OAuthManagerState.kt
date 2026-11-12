@@ -19,9 +19,7 @@ internal data class OAuthManagerState(
     val idTokenVerificationLeeway: Int?,
     val idTokenVerificationIssuer: String?,
     val customAuthorizeUrl: String? = null,
-    val dPoPEnabled: Boolean = false,
-    val tokenExchangeMaxRetries: Int? = null,
-    val tokenExchangeRetryDelayMillis: Long? = null
+    val dPoPEnabled: Boolean = false
 ) {
 
     private class OAuthManagerJson(
@@ -41,7 +39,7 @@ internal data class OAuthManagerState(
         val dPoPEnabled: Boolean,
         // nullable so state saved by older versions deserializes to "not set"
         val tokenExchangeMaxRetries: Int?,
-        val tokenExchangeRetryDelayMillis: Long?
+        val tokenExchangeRetryDelay: Int?
     )
 
     fun serializeToJson(
@@ -67,8 +65,8 @@ internal data class OAuthManagerState(
                 idTokenVerificationLeeway = idTokenVerificationLeeway,
                 customAuthorizeUrl = this.customAuthorizeUrl,
                 dPoPEnabled = this.dPoPEnabled,
-                tokenExchangeMaxRetries = tokenExchangeMaxRetries,
-                tokenExchangeRetryDelayMillis = tokenExchangeRetryDelayMillis
+                tokenExchangeMaxRetries = pkce?.maxNetworkRetries,
+                tokenExchangeRetryDelay = pkce?.networkRetryDelaySeconds
             )
             return gson.toJson(json)
         } finally {
@@ -114,13 +112,13 @@ internal data class OAuthManagerState(
                         oauthManagerJson.redirectUri,
                         oauthManagerJson.codeChallenge,
                         oauthManagerJson.headers,
+                        oauthManagerJson.tokenExchangeMaxRetries,
+                        oauthManagerJson.tokenExchangeRetryDelay,
                     ),
                     idTokenVerificationIssuer = oauthManagerJson.idTokenVerificationIssuer,
                     idTokenVerificationLeeway = oauthManagerJson.idTokenVerificationLeeway,
                     customAuthorizeUrl = oauthManagerJson.customAuthorizeUrl,
-                    dPoPEnabled = oauthManagerJson.dPoPEnabled,
-                    tokenExchangeMaxRetries = oauthManagerJson.tokenExchangeMaxRetries,
-                    tokenExchangeRetryDelayMillis = oauthManagerJson.tokenExchangeRetryDelayMillis
+                    dPoPEnabled = oauthManagerJson.dPoPEnabled
                 )
             } finally {
                 parcel.recycle()

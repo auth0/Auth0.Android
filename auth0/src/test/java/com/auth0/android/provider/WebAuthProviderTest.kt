@@ -1067,31 +1067,24 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public fun shouldUseDefaultTokenExchangeRetryOnResume() {
-        val pkce = Mockito.mock(PKCE::class.java)
-        `when`(pkce.codeChallenge).thenReturn("challenge")
-        login(account)
-            .withPKCE(pkce)
-            .withState("1234567890")
-            .start(activity, callback)
-        Assert.assertTrue(resume(createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null, "1234"))))
-        verify(pkce).setNetworkRetry(3, 1000L)
-        verify(pkce).getToken(eq("1234"), any())
+    public fun shouldUseDefaultTokenExchangeRetry() {
+        login(account).start(activity, callback)
+
+        val pkce = restoredManagerState().pkce!!
+        assertThat(pkce.maxNetworkRetries, `is`(2))
+        assertThat(pkce.networkRetryDelaySeconds, `is`(2))
     }
 
     @Test
-    public fun shouldUseCustomTokenExchangeRetryOnResume() {
-        val pkce = Mockito.mock(PKCE::class.java)
-        `when`(pkce.codeChallenge).thenReturn("challenge")
+    public fun shouldKeepCustomTokenExchangeRetryAcrossProcessRestore() {
         login(account)
-            .withPKCE(pkce)
-            .withState("1234567890")
             .withTokenExchangeMaxRetries(5)
-            .withTokenExchangeRetryDelay(200)
+            .withTokenExchangeRetryDelay(3)
             .start(activity, callback)
-        Assert.assertTrue(resume(createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null, "1234"))))
-        verify(pkce).setNetworkRetry(5, 200L)
-        verify(pkce).getToken(eq("1234"), any())
+
+        val pkce = restoredManagerState().pkce!!
+        assertThat(pkce.maxNetworkRetries, `is`(5))
+        assertThat(pkce.networkRetryDelaySeconds, `is`(3))
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -1100,8 +1093,18 @@ public class WebAuthProviderTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
+    public fun shouldRejectTokenExchangeMaxRetriesAboveTen() {
+        login(account).withTokenExchangeMaxRetries(11)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
     public fun shouldRejectNegativeTokenExchangeRetryDelay() {
         login(account).withTokenExchangeRetryDelay(-1)
+    }
+
+    private fun restoredManagerState(): OAuthManagerState {
+        val json = (WebAuthProvider.managerInstance as OAuthManager).toState().serializeToJson()
+        return OAuthManagerState.deserializeState(json)
     }
 
     @Test

@@ -52,40 +52,36 @@ internal class OAuthManagerStateTest {
             parameters = emptyMap(),
             headers = emptyMap(),
             ctOptions = CustomTabsOptions.newBuilder().build(),
-            pkce = PKCE(mock(), "redirectUri", emptyMap()),
+            pkce = PKCE(mock(), "redirectUri", emptyMap(), 5, 3),
             idTokenVerificationLeeway = null,
-            idTokenVerificationIssuer = null,
-            tokenExchangeMaxRetries = 5,
-            tokenExchangeRetryDelayMillis = 200
+            idTokenVerificationIssuer = null
         )
 
         val deserializedState = OAuthManagerState.deserializeState(state.serializeToJson())
 
-        Assert.assertEquals(5, deserializedState.tokenExchangeMaxRetries)
-        Assert.assertEquals(200L, deserializedState.tokenExchangeRetryDelayMillis)
+        Assert.assertEquals(5, deserializedState.pkce?.maxNetworkRetries)
+        Assert.assertEquals(3, deserializedState.pkce?.networkRetryDelaySeconds)
     }
 
     @Test
-    fun `deserialize should leave token exchange retry settings unset for state saved without them`() {
+    fun `deserialize should use default token exchange retry settings for state saved without them`() {
         val state = OAuthManagerState(
             auth0 = Auth0.getInstance("clientId", "domain"),
             parameters = emptyMap(),
             headers = emptyMap(),
             ctOptions = CustomTabsOptions.newBuilder().build(),
-            pkce = PKCE(mock(), "redirectUri", emptyMap()),
+            pkce = PKCE(mock(), "redirectUri", emptyMap(), 5, 3),
             idTokenVerificationLeeway = null,
-            idTokenVerificationIssuer = null,
-            tokenExchangeMaxRetries = 5,
-            tokenExchangeRetryDelayMillis = 200
+            idTokenVerificationIssuer = null
         )
         val json = org.json.JSONObject(state.serializeToJson())
         json.remove("tokenExchangeMaxRetries")
-        json.remove("tokenExchangeRetryDelayMillis")
+        json.remove("tokenExchangeRetryDelay")
 
         val deserializedState = OAuthManagerState.deserializeState(json.toString())
 
-        Assert.assertNull(deserializedState.tokenExchangeMaxRetries)
-        Assert.assertNull(deserializedState.tokenExchangeRetryDelayMillis)
+        Assert.assertEquals(2, deserializedState.pkce?.maxNetworkRetries)
+        Assert.assertEquals(2, deserializedState.pkce?.networkRetryDelaySeconds)
     }
 
     @Test

@@ -64,14 +64,14 @@ The URL provided to `.withAuthorizeUrl()` must be a complete and valid HTTPS URL
 
 ## Configure the token exchange retry
 
-After the browser redirects back, the SDK exchanges the authorization code for tokens. On some devices, such as Android 15+ or devices with aggressive battery optimization, the OS blocks network access for apps in the background and restores it a moment after the app returns to the foreground. If the exchange fails before reaching Auth0 for this reason, the SDK retries it 3 times, 1000 milliseconds apart. Requests that may have reached Auth0 are never retried, because the authorization code can only be used once.
+After the browser redirects back, the SDK exchanges the authorization code for tokens. On some devices, such as Android 15+ or devices with aggressive battery optimization, the OS blocks network access for apps in the background and restores it a moment after the app returns to the foreground. If the exchange fails before reaching Auth0 for this reason, the SDK retries it 2 times, 2 seconds apart. Requests that may have reached Auth0 are never retried, because the authorization code can only be used once.
 
-You can change the number of retries and the delay between them, or pass `0` retries to disable them:
+You can change the number of retries (up to 10) and the delay between them in seconds, or pass `0` retries to disable them:
 
 ```kotlin
 WebAuthProvider.login(account)
     .withTokenExchangeMaxRetries(5)
-    .withTokenExchangeRetryDelay(500)
+    .withTokenExchangeRetryDelay(3)
     .start(this, callback)
 ```
 
@@ -81,7 +81,7 @@ WebAuthProvider.login(account)
 ```java
 WebAuthProvider.login(account)
     .withTokenExchangeMaxRetries(5)
-    .withTokenExchangeRetryDelay(500)
+    .withTokenExchangeRetryDelay(3)
     .start(this, callback);
 ```
 </details>
