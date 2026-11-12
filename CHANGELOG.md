@@ -1,5 +1,14 @@
 # Change Log
 
+## [4.3.1](https://github.com/auth0/Auth0.Android/tree/4.3.1) (2026-11-12)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.3.0...4.3.1)
+
+**Changed**
+- docs(myaccount): mark the My Account Profile API as Beta [\#1124](https://github.com/auth0/Auth0.Android/pull/1124) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
+**Fixed**
+- fix(webauth): retry code exchange while network is still blocked, make it configurable [\#1125](https://github.com/auth0/Auth0.Android/pull/1125) ([subhankarmaiti](https://github.com/subhankarmaiti))
+
 ## [4.3.0](https://github.com/auth0/Auth0.Android/tree/4.3.0) (2026-10-30)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.2.1...4.3.0)
 
