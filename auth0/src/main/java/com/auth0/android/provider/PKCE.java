@@ -169,7 +169,7 @@ class PKCE {
 
     // OkHttp attaches the failures it already recovered from as suppressed exceptions, and any of
     // those that isn't a DNS or connect failure means the request may have been sent.
-    private static boolean isUnsentRequestError(@Nullable Throwable error) {
+    private boolean isUnsentRequestError(@Nullable Throwable error) {
         if (!(error instanceof UnknownHostException || error instanceof ConnectException)) {
             return false;
         }

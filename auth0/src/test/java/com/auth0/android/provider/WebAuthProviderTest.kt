@@ -1078,12 +1078,12 @@ public class WebAuthProviderTest {
     @Test
     public fun shouldKeepCustomTokenExchangeRetryAcrossProcessRestore() {
         login(account)
-            .withTokenExchangeMaxRetries(5)
+            .withTokenExchangeMaxRetries(4)
             .withTokenExchangeRetryDelay(3)
             .start(activity, callback)
 
         val pkce = restoredManagerState().pkce!!
-        assertThat(pkce.maxNetworkRetries, `is`(5))
+        assertThat(pkce.maxNetworkRetries, `is`(4))
         assertThat(pkce.networkRetryDelaySeconds, `is`(3))
     }
 
@@ -1093,8 +1093,8 @@ public class WebAuthProviderTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
-    public fun shouldRejectTokenExchangeMaxRetriesAboveTen() {
-        login(account).withTokenExchangeMaxRetries(11)
+    public fun shouldRejectTokenExchangeMaxRetriesAboveFour() {
+        login(account).withTokenExchangeMaxRetries(5)
     }
 
     @Test(expected = IllegalArgumentException::class)

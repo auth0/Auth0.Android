@@ -37,7 +37,7 @@ public object WebAuthProvider {
     private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
     private const val KEY_BUNDLE_PAR_MANAGER_STATE = "par_manager_state"
     private const val AUTH_REQUEST_CODE = 110
-    private const val MAX_TOKEN_EXCHANGE_RETRIES = 10
+    private const val TOKEN_EXCHANGE_MAX_RETRIES_LIMIT = 4
 
     private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
     private val parCallbacks =
@@ -589,12 +589,12 @@ public object WebAuthProvider {
          * network access yet after it was in the background. Requests that may have reached Auth0
          * are never retried. Defaults to 2. Pass 0 to disable retries.
          *
-         * @param maxRetries the maximum number of retries, from 0 to 10.
+         * @param maxRetries the maximum number of retries, from 0 to 4.
          * @return the current builder instance
          */
         public fun withTokenExchangeMaxRetries(maxRetries: Int): Builder {
-            require(maxRetries in 0..MAX_TOKEN_EXCHANGE_RETRIES) {
-                "maxRetries must be between 0 and $MAX_TOKEN_EXCHANGE_RETRIES"
+            require(maxRetries in 0..TOKEN_EXCHANGE_MAX_RETRIES_LIMIT) {
+                "maxRetries must be between 0 and $TOKEN_EXCHANGE_MAX_RETRIES_LIMIT"
             }
             this.tokenExchangeMaxRetries = maxRetries
             return this
