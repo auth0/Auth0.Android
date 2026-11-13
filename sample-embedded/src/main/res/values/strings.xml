@@ -47,6 +47,11 @@
     <string name="status_waiting_for_push">Waiting for you to approve the push notification…</string>
     <string name="label_signup">New here? Create an account</string>
     <string name="action_signup">Sign up</string>
+    <string name="hint_new_password">Choose a password</string>
+    <string name="hint_new_password_optional">Choose a password (optional)</string>
+    <string name="error_password_required">Choose a password to create your account.</string>
+    <string name="error_password_not_accepted">This account doesn\'t use a password.</string>
+    <string name="error_invalid_password">That password isn\'t allowed. Choose another one.</string>
     <string name="label_confirm_signup">Your details are verified</string>
     <string name="action_confirm_signup">Create account</string>
     <string name="label_unsupported_action">Unsupported action: %1$s</string>

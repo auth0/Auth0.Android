@@ -17,7 +17,7 @@ import com.auth0.android.result.Credentials
 internal class AdvancingRequest(
     private val authorize: Request<AuthorizeCode, EmbeddedAuthException>,
     private val exchange: (authorizationCode: String) -> Request<Credentials, EmbeddedAuthException>,
-    private val onStepFailure: (EmbeddedAuthException) -> Unit,
+    private val onStepFailure: (EmbeddedAuthException) -> EmbeddedAuthException,
     private val onFlowComplete: () -> Unit
 ) : Request<Credentials, EmbeddedAuthException> {
 
@@ -29,8 +29,7 @@ internal class AdvancingRequest(
             }
 
             override fun onFailure(error: EmbeddedAuthException) {
-                onStepFailure(error)
-                callback.onFailure(error)
+                callback.onFailure(onStepFailure(error))
             }
         })
     }
@@ -40,8 +39,7 @@ internal class AdvancingRequest(
         val code = try {
             authorize.await()
         } catch (error: EmbeddedAuthException) {
-            onStepFailure(error)
-            throw error
+            throw onStepFailure(error)
         }
         onFlowComplete()
         return exchange(code.authorizationCode).await()
@@ -52,8 +50,7 @@ internal class AdvancingRequest(
         val code = try {
             authorize.execute()
         } catch (error: EmbeddedAuthException) {
-            onStepFailure(error)
-            throw error
+            throw onStepFailure(error)
         }
         onFlowComplete()
         return exchange(code.authorizationCode).execute()
