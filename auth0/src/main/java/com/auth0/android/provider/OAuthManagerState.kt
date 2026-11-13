@@ -36,7 +36,10 @@ internal data class OAuthManagerState(
         val idTokenVerificationLeeway: Int?,
         val idTokenVerificationIssuer: String?,
         val customAuthorizeUrl: String? = null,
-        val dPoPEnabled: Boolean
+        val dPoPEnabled: Boolean,
+        // nullable so state saved by older versions deserializes to "not set"
+        val tokenExchangeMaxRetries: Int?,
+        val tokenExchangeRetryDelay: Int?
     )
 
     fun serializeToJson(
@@ -61,7 +64,9 @@ internal data class OAuthManagerState(
                 idTokenVerificationIssuer = idTokenVerificationIssuer,
                 idTokenVerificationLeeway = idTokenVerificationLeeway,
                 customAuthorizeUrl = this.customAuthorizeUrl,
-                dPoPEnabled = this.dPoPEnabled
+                dPoPEnabled = this.dPoPEnabled,
+                tokenExchangeMaxRetries = pkce?.maxNetworkRetries,
+                tokenExchangeRetryDelay = pkce?.networkRetryDelaySeconds
             )
             return gson.toJson(json)
         } finally {
@@ -107,6 +112,8 @@ internal data class OAuthManagerState(
                         oauthManagerJson.redirectUri,
                         oauthManagerJson.codeChallenge,
                         oauthManagerJson.headers,
+                        oauthManagerJson.tokenExchangeMaxRetries,
+                        oauthManagerJson.tokenExchangeRetryDelay,
                     ),
                     idTokenVerificationIssuer = oauthManagerJson.idTokenVerificationIssuer,
                     idTokenVerificationLeeway = oauthManagerJson.idTokenVerificationLeeway,

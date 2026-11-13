@@ -3,6 +3,8 @@ package com.auth0.android.myaccount.request
 /**
  * The changes to apply with [com.auth0.android.myaccount.MyAccountAPIClient.updateUserProfile].
  *
+ * This API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta) and might change before General Availability.
+ *
  * Properties left as `null` are not sent and remain unchanged. A request with every property
  * `null` is valid and returns the current profile.
  *
