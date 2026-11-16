@@ -11,6 +11,9 @@ The embedded authorization flow (`/e/authorize`) lets your app authenticate user
 
 `EmbeddedAuthError` is a sealed interface. Branch on it with a `when`. The recoverable case, `EmbeddedAuthError.InsufficientAuthorization`, carries the `nextActions` list; the terminal cases do not. `Network` signals the request never reached the server, so the same step is safe to retry; if the retry fails with `NoActiveSession`, the flow had already ended, so restart with `authorize()`.
 
+> [!NOTE]
+> The SDK adds PKCE (`S256`) to every embedded flow: `authorize()` sends a new code challenge, and the matching code verifier is sent when the authorization code is exchanged for tokens. Your app doesn't need to do anything.
+
 The flow is served by `EmbeddedAuthClient`, created from an `Auth0` instance:
 
 ```kotlin

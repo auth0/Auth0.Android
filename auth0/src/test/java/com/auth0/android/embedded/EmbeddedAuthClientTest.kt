@@ -10,6 +10,7 @@ import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.embedded.authorize.SignupIdentifier
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
+import com.auth0.android.util.AlgorithmHelper
 import com.auth0.android.util.EmbeddedAuthMockServer
 import com.auth0.android.util.SSLTestUtils.testClient
 import kotlinx.coroutines.test.runTest
@@ -26,9 +27,15 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.StringReader
+import java.security.MessageDigest
+import java.util.Base64
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
@@ -140,6 +147,85 @@ public class EmbeddedAuthClientTest {
 
         val capabilities = capabilitiesOf(bodyOf(mockAPI.takeRequest()))
         assertThat(capabilities, `is`(listOf("action:identify:email:v1", "action:verify:otp:v1")))
+    }
+
+    // ── PKCE ─────────────────────────────────────────────────────────────────────
+
+    @Test
+    public fun `authorize sends an S256 PKCE code challenge`(): Unit = runTest {
+        mockAPI.willReturnInsufficientAuthorization()
+
+        assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.getString("code_challenge_method"), `is`("S256"))
+        assertThat(PKCE_PATTERN.matches(body.getString("code_challenge")), `is`(true))
+    }
+
+    @Test
+    public fun `the token exchange sends the verifier of the challenge sent at authorize`(): Unit = runTest {
+        mockAPI.willReturnInsufficientAuthorization()
+        assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+        val challenge = bodyOf(mockAPI.takeRequest()).getString("code_challenge")
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        client.verifyOtp("123456", OtpType.OOB).await()
+        mockAPI.takeRequest()
+
+        val verifier = bodyOf(mockAPI.takeRequest()).getString("code_verifier")
+        assertThat(PKCE_PATTERN.matches(verifier), `is`(true))
+        assertThat(s256(verifier), `is`(challenge))
+    }
+
+    @Test
+    public fun `the verifier survives session rotations until the token exchange`(): Unit = runTest {
+        mockAPI.willReturnInsufficientAuthorization()
+        assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+        val challenge = bodyOf(mockAPI.takeRequest()).getString("code_challenge")
+        mockAPI.willReturnInsufficientAuthorization(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION)
+        assertEmbeddedErrorSuspending { client.identify("jane@example.com", IdentifierType.EMAIL).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        client.verifyOtp("123456", OtpType.OOB).await()
+        mockAPI.takeRequest()
+
+        assertThat(s256(bodyOf(mockAPI.takeRequest()).getString("code_verifier")), `is`(challenge))
+    }
+
+    @Test
+    public fun `a new authorize uses a new challenge and the exchange uses its verifier`(): Unit = runTest {
+        mockAPI.willReturnInsufficientAuthorization()
+        assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+        val first = bodyOf(mockAPI.takeRequest()).getString("code_challenge")
+        mockAPI.willReturnInsufficientAuthorization()
+        assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+        val second = bodyOf(mockAPI.takeRequest()).getString("code_challenge")
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        client.verifyOtp("123456", OtpType.OOB).await()
+        mockAPI.takeRequest()
+
+        assertThat(second == first, `is`(false))
+        assertThat(s256(bodyOf(mockAPI.takeRequest()).getString("code_verifier")), `is`(second))
+    }
+
+    @Test
+    public fun `authorize fails without sending a request when the code challenge can't be created`(): Unit = runTest {
+        val helper = mock<AlgorithmHelper> {
+            on { generateCodeVerifier() } doReturn "verifier"
+            on { generateCodeChallenge(any()) } doThrow IllegalStateException("no SHA-256")
+        }
+        val failing = EmbeddedAuthClient(auth0, helper)
+
+        val error = assertEmbeddedErrorSuspending { failing.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.Unknown))
+        assertThat(error.cause, instanceOf(IllegalStateException::class.java))
+        assertThat(mockAPI.server.requestCount, `is`(0))
     }
 
     // ── verifyOtp — token exchange ──────────────────────────────────────────────
@@ -1752,6 +1838,10 @@ public class EmbeddedAuthClientTest {
         return error!!
     }
 
+    private fun s256(verifier: String): String =
+        Base64.getUrlEncoder().withoutPadding()
+            .encodeToString(MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.US_ASCII)))
+
     private fun bodyOf(request: RecordedRequest): JSONObject =
         JSONObject(request.body.readUtf8())
 
@@ -1762,6 +1852,7 @@ public class EmbeddedAuthClientTest {
 
     private companion object {
         private const val CLIENT_ID = "CLIENT_ID"
+        private val PKCE_PATTERN = Regex("^[A-Za-z0-9\\-._~]{43,128}$")
     }
 }
 

@@ -1,6 +1,7 @@
 package com.auth0.android.embedded
 
 import com.auth0.android.Auth0
+import com.auth0.android.Auth0Exception
 import com.auth0.android.embedded.authorize.AdvancingRequest
 import com.auth0.android.embedded.authorize.AuthorizeCode
 import com.auth0.android.embedded.authorize.EmbeddedAuthState
@@ -18,6 +19,7 @@ import com.auth0.android.request.internal.GsonAdapter
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.result.Credentials
+import com.auth0.android.util.AlgorithmHelper
 import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
@@ -32,7 +34,12 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
  * **Note**
  * Embedded Authorization is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta). Please reach out to Auth0 support to get it enabled for your tenant.
  */
-public class EmbeddedAuthClient(private val auth0: Auth0) {
+public class EmbeddedAuthClient internal constructor(
+    private val auth0: Auth0,
+    private val algorithmHelper: AlgorithmHelper
+) {
+
+    public constructor(auth0: Auth0) : this(auth0, AlgorithmHelper())
 
     /** Used for both `/e/authorize` and the `/oauth/token` exchange. */
     private val factory: RequestFactory<EmbeddedAuthException> =
@@ -54,6 +61,9 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * [EmbeddedAuthError.InsufficientAuthorization.nextActions] on [EmbeddedAuthException.error]
      * to learn which step to call next. A terminal error is reported on the same failure channel.
      *
+     * The flow is protected with PKCE (RFC 7636, `S256`): a new code challenge is sent here, and its
+     * verifier is sent when the authorization code is exchanged for tokens.
+     *
      * @param connection name of the connection to authenticate against.
      * @param scope space-separated scopes to request. Must include `openid` for the terminal token
      * exchange to return an ID token; defaults to `"openid profile email offline_access"`.
@@ -68,12 +78,28 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         capabilities: Set<EmbeddedCapability> = DEFAULT_CAPABILITIES
     ): Request<Void?, EmbeddedAuthException> {
         transactionState = null
+        val verifier = algorithmHelper.generateCodeVerifier()
+        val challenge = try {
+            algorithmHelper.generateCodeChallenge(verifier)
+        } catch (e: IllegalStateException) {
+            return FailedRequest(
+                EmbeddedAuthException(
+                    Auth0Exception.UNKNOWN_ERROR,
+                    "Failed to create the PKCE code challenge.",
+                    error = EmbeddedAuthError.Unknown,
+                    cause = e
+                )
+            )
+        }
+        transactionState = EmbeddedAuthState(codeVerifier = verifier)
         val request = factory.post(authorizeUrl)
             .addParameters(buildMap {
                 put(CLIENT_ID_KEY, clientId)
                 put(CONNECTION_KEY, connection)
                 put(SCOPE_KEY, scope)
                 audience?.let { put(AUDIENCE_KEY, it) }
+                put(CODE_CHALLENGE_KEY, challenge)
+                put(CODE_CHALLENGE_METHOD_KEY, CODE_CHALLENGE_METHOD_S256)
             })
             .addParameter(CAPABILITIES_KEY, capabilities.map { it.value })
         return stepping(request)
@@ -281,7 +307,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         action: EmbeddedCapability,
         addPayload: Request<AuthorizeCode, EmbeddedAuthException>.() -> Unit = {}
     ): Request<Credentials, EmbeddedAuthException> {
-        val session = transactionState?.authSession ?: return noActiveSession()
+        val state = transactionState
+        val session = state?.authSession ?: return noActiveSession()
         val request = factory.post(authorizeUrl, authorizeCodeAdapter(gson))
             .addParameters(
                 mapOf(
@@ -291,7 +318,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
                 )
             )
         request.addPayload()
-        return advancing(request)
+        return advancing(request, state.codeVerifier)
     }
 
     private fun <T> noActiveSession(): Request<T, EmbeddedAuthException> = FailedRequest<T>(
@@ -306,28 +333,35 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         request: Request<Void?, EmbeddedAuthException>
     ): Request<Void?, EmbeddedAuthException> = StepRequest(request, ::updateSessionFromFailure)
 
+    /**
+     * Wraps a final step. The verifier is captured here because the session state is cleared as soon as
+     * the server issues the authorization code, before the code is exchanged.
+     */
     private fun advancing(
-        request: Request<AuthorizeCode, EmbeddedAuthException>
+        request: Request<AuthorizeCode, EmbeddedAuthException>,
+        codeVerifier: String
     ): Request<Credentials, EmbeddedAuthException> = AdvancingRequest(
         authorize = request,
-        exchange = ::exchange,
+        exchange = { code -> exchange(code, codeVerifier) },
         onStepFailure = ::updateSessionFromFailure,
         onFlowComplete = { transactionState = null }
     )
 
-    private fun exchange(authorizationCode: String): Request<Credentials, EmbeddedAuthException> {
+    private fun exchange(
+        authorizationCode: String,
+        codeVerifier: String
+    ): Request<Credentials, EmbeddedAuthException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(OAUTH_PATH)
             .addPathSegment(TOKEN_PATH)
             .build()
         return factory.post(url.toString(), GsonAdapter(Credentials::class.java, gson))
-            .addParameters(
-                mapOf(
-                    CLIENT_ID_KEY to clientId,
-                    GRANT_TYPE_KEY to GRANT_TYPE_AUTHORIZATION_CODE,
-                    CODE_KEY to authorizationCode
-                )
-            )
+            .addParameters(buildMap {
+                put(CLIENT_ID_KEY, clientId)
+                put(GRANT_TYPE_KEY, GRANT_TYPE_AUTHORIZATION_CODE)
+                put(CODE_KEY, authorizationCode)
+                put(CODE_VERIFIER_KEY, codeVerifier)
+            })
     }
 
     private val authorizeUrl: String by lazy {
@@ -343,7 +377,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
 
         when (error.error) {
             is EmbeddedAuthError.InsufficientAuthorization ->
-                error.authSession?.let { transactionState = EmbeddedAuthState(it) }
+                error.authSession?.let { session -> transactionState = transactionState?.copy(authSession = session) }
 
             is EmbeddedAuthError.Network -> Unit
             else -> transactionState = null
@@ -373,6 +407,10 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         private const val TYPE_KEY = "type"
         private const val GRANT_TYPE_KEY = "grant_type"
         private const val CODE_KEY = "code"
+        private const val CODE_CHALLENGE_KEY = "code_challenge"
+        private const val CODE_CHALLENGE_METHOD_KEY = "code_challenge_method"
+        private const val CODE_CHALLENGE_METHOD_S256 = "S256"
+        private const val CODE_VERIFIER_KEY = "code_verifier"
         private const val GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code"
         private const val NO_ACTIVE_SESSION_ERROR = "no_active_session"
 
