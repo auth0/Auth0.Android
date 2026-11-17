@@ -48,6 +48,8 @@ internal class OAuthManager(
 
     private var idTokenVerificationLeeway: Int? = null
     private var idTokenVerificationIssuer: String? = null
+    private var tokenExchangeMaxRetries: Int? = null
+    private var tokenExchangeRetryDelay: Int? = null
 
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     fun setPKCE(pkce: PKCE?) {
@@ -56,6 +58,14 @@ internal class OAuthManager(
 
     fun setIdTokenVerificationLeeway(leeway: Int?) {
         idTokenVerificationLeeway = leeway
+    }
+
+    fun setTokenExchangeMaxRetries(maxRetries: Int?) {
+        tokenExchangeMaxRetries = maxRetries
+    }
+
+    fun setTokenExchangeRetryDelay(seconds: Int?) {
+        tokenExchangeRetryDelay = seconds
     }
 
     fun setIdTokenVerificationIssuer(issuer: String?) {
@@ -304,7 +314,7 @@ internal class OAuthManager(
             dPoP?.let {
                 apiClient.useDPoP(context)
             }
-            pkce = PKCE(apiClient, redirectUri, headers)
+            pkce = PKCE(apiClient, redirectUri, headers, tokenExchangeMaxRetries, tokenExchangeRetryDelay)
         }
     }
 

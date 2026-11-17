@@ -37,6 +37,7 @@ public object WebAuthProvider {
     private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
     private const val KEY_BUNDLE_PAR_MANAGER_STATE = "par_manager_state"
     private const val AUTH_REQUEST_CODE = 110
+    private const val TOKEN_EXCHANGE_MAX_RETRIES_LIMIT = 4
 
     private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
     private val parCallbacks =
@@ -526,6 +527,8 @@ public object WebAuthProvider {
         private var dPoP: DPoP? = null
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var leeway: Int? = null
+        private var tokenExchangeMaxRetries: Int? = null
+        private var tokenExchangeRetryDelay: Int? = null
         private var launchAsTwa: Boolean = false
         private var ephemeralBrowsing: Boolean = false
         private var authTab: Boolean = false
@@ -577,6 +580,36 @@ public object WebAuthProvider {
          */
         public fun withIdTokenVerificationLeeway(leeway: Int): Builder {
             this.leeway = leeway
+            return this
+        }
+
+        /**
+         * Set how many times the code exchange that follows the browser redirect is retried when
+         * it fails before reaching Auth0, for example because the OS hasn't restored the app's
+         * network access yet after it was in the background. Requests that may have reached Auth0
+         * are never retried. Defaults to 2. Pass 0 to disable retries.
+         *
+         * @param maxRetries the maximum number of retries, from 0 to 4.
+         * @return the current builder instance
+         */
+        public fun withTokenExchangeMaxRetries(maxRetries: Int): Builder {
+            require(maxRetries in 0..TOKEN_EXCHANGE_MAX_RETRIES_LIMIT) {
+                "maxRetries must be between 0 and $TOKEN_EXCHANGE_MAX_RETRIES_LIMIT"
+            }
+            this.tokenExchangeMaxRetries = maxRetries
+            return this
+        }
+
+        /**
+         * Set the delay between code exchange retries. See [withTokenExchangeMaxRetries].
+         * Defaults to 2 seconds.
+         *
+         * @param delay the delay between retries, in seconds, must not be negative.
+         * @return the current builder instance
+         */
+        public fun withTokenExchangeRetryDelay(delay: Int): Builder {
+            require(delay >= 0) { "delay must not be negative" }
+            this.tokenExchangeRetryDelay = delay
             return this
         }
 
@@ -898,6 +931,8 @@ public object WebAuthProvider {
             manager.setPKCE(pkce)
             manager.setIdTokenVerificationLeeway(leeway)
             manager.setIdTokenVerificationIssuer(issuer)
+            manager.setTokenExchangeMaxRetries(tokenExchangeMaxRetries)
+            manager.setTokenExchangeRetryDelay(tokenExchangeRetryDelay)
             managerInstance = manager
             if (redirectUri == null) {
                 redirectUri = CallbackHelper.getCallbackUri(

@@ -852,9 +852,10 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      *
      * ## Availability
      *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
+     * This feature is currently in
+     * [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta).
+     * It might change before General Availability, and Auth0 does not support beta functionality for
+     * production use. The feature must be enabled for your tenant.
      *
      * ## Scopes Required
      * `read:me:profile`
@@ -912,9 +913,10 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      *
      * ## Availability
      *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
+     * This feature is currently in
+     * [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta).
+     * It might change before General Availability, and Auth0 does not support beta functionality for
+     * production use. The feature must be enabled for your tenant.
      *
      * ## Scopes Required
      * `update:me:profile`
