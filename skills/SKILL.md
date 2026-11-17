@@ -78,6 +78,8 @@ https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 
 `{YOUR_APP_PACKAGE_NAME}` is the `applicationId`. With a custom scheme, replace `https` with it.
 
+For `https`, also register the app for [Android App Links](https://auth0.com/docs/applications/enable-android-app-links-support): in the application's Device Settings in the Dashboard, add the package name and the SHA256 fingerprint of the signing certificate (`keytool -printcert -jarfile app.apk`). Debug and release builds have different fingerprints.
+
 ### 3. Create the Auth0 instance
 
 ```xml
@@ -96,6 +98,7 @@ val account = Auth0.getInstance(context)
 ### 4. Log in and log out
 
 ```kotlin
+// on login tap
 WebAuthProvider.login(account)
     .withScope("openid profile email offline_access")
     .start(this, object : Callback<Credentials, AuthenticationException> {
@@ -112,6 +115,7 @@ WebAuthProvider.login(account)
         }
     })
 
+// on logout tap, after login has finished; starting logout resets any login in flight
 WebAuthProvider.logout(account)
     .start(this, object : Callback<Void?, AuthenticationException> {
         override fun onSuccess(result: Void?) {
@@ -152,6 +156,8 @@ if (credentialsManager.hasValidCredentials()) {
             }
         }
     })
+} else {
+    // no stored session: start WebAuthProvider.login
 }
 ```
 
@@ -207,10 +213,12 @@ authentication.signUp("user@example.com", "password", connection = "Username-Pas
 authentication.resetPassword("user@example.com", "Username-Password-Authentication")
     .start(voidCallback)
 
-// Passwordless email code: request, then log in
+// Passwordless email code: request the code
 authentication.passwordlessWithEmail("user@example.com", PasswordlessType.CODE, "email")
     .start(voidCallback)
-authentication.loginWithEmail("user@example.com", "123456", "email")
+
+// then, once the user types the code they received
+authentication.loginWithEmail("user@example.com", userEnteredCode, "email")
     .validateClaims()
     .start(callback)
 ```

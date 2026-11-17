@@ -48,6 +48,7 @@ val response = (result.credential as PublicKeyCredential).authenticationResponse
 val credentials = authentication
     .signinWithPasskey(challenge.authSession, Gson().fromJson(response, PublicKeyCredentials::class.java), "Username-Password-Authentication")
     .validateClaims()
+    .setScope("openid profile email offline_access")
     .await()
 credentialsManager.saveCredentials(credentials)
 ```
@@ -75,11 +76,11 @@ val credentials = authentication
 
 ### Identifier verification
 
-If the connection requires verified email or phone, `challenge.verificationRequired` lists `PasskeyVerificationMethod` values. Collect the OTP codes before creating the platform credential, then pass `verification = codes` and `verificationRequired = challenge.verificationRequired.orEmpty()` to `signinWithPasskey`. On `error.isPasskeyVerificationRetryable`, re-collect the codes in `error.passkeyVerificationRequired` and retry with the same auth session and credential. Any other error means restarting from `signupWithPasskey`. Optional `deliveryMethod`: `DeliveryMethod.TEXT` or `VOICE`.
+If the connection requires verified email or phone, `challenge.verificationRequired` lists `PasskeyVerificationMethod` values. Collect the OTP codes before creating the platform credential, then pass `verification = codes` and `verificationRequired = challenge.verificationRequired.orEmpty()` to `signinWithPasskey`. On `error.isPasskeyVerificationRetryable`, re-collect the codes in `error.passkeyVerificationRequired` and retry with the same credential and `error.passkeyAuthSession`, not the original `challenge.authSession`. Any other error means restarting from `signupWithPasskey`. Optional `deliveryMethod`: `DeliveryMethod.TEXT` or `VOICE`.
 
 ## Enroll a passkey for a signed-in user
 
-Uses the same create ceremony, but goes through `MyAccountAPIClient` with a My Account token. It does not create an account and returns no new `Credentials`.
+Uses the same create ceremony, but goes through `MyAccountAPIClient` with a My Account token. It does not create an account and returns no new `Credentials`. `awaitApiCredentials` exchanges the refresh token, so sign-in must request `offline_access`. If that refresh token was issued for another audience, Multi-Resource Refresh Token must be configured for the My Account API on the tenant.
 
 ```kotlin
 val api = credentialsManager.awaitApiCredentials(

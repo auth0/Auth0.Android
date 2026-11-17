@@ -67,7 +67,7 @@ val mfaClient = authentication.mfaClient(mfaToken)
 val authenticator = mfaClient
     .getAuthenticators(factorsAllowed = requirements.challenge.orEmpty().map { it.type })
     .await()
-    .first()
+    .first { it.active } // throws if none is active; enroll instead
 
 val credentials = if (authenticator.authenticatorType == "otp") {
     mfaClient.verify(MfaVerificationType.Otp(userEnteredCode))
@@ -76,6 +76,7 @@ val credentials = if (authenticator.authenticatorType == "otp") {
     mfaClient.verify(MfaVerificationType.Oob(challenge.oobCode!!, bindingCode = userEnteredCode))
 }.await()
 
+// verify does not validate the ID token; check the claims you rely on before trusting it
 credentialsManager.saveCredentials(credentials)
 ```
 
@@ -85,7 +86,7 @@ For push, the `bindingCode` is optional; omit it once the user approves on their
 
 ```kotlin
 when (val enrollment = mfaClient.enroll(MfaEnrollmentType.Otp).await()) {
-    is TotpEnrollmentChallenge -> { /* show enrollment.barcodeUri or manualInputCode */ }
+    is TotpEnrollmentChallenge -> { /* show enrollment.barcodeUri or enrollment.secret (manualInputCode is only set by My Account) */ }
     is OobEnrollmentChallenge -> { /* then verify with MfaVerificationType.Oob(enrollment.oobCode!!, code) */ }
     else -> { }
 }
