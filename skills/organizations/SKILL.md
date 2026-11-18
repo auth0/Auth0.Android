@@ -30,7 +30,7 @@ The SDK validates the ID token against the value you pass: an id starting with `
 
 ## Accept an invitation
 
-Invitation links are `https` only, so set up [Android App Links](https://auth0.com/docs/applications/enable-android-app-links-support) so the link opens your app, and set the application's Application Login URI in the Dashboard to that HTTPS URL so invitations point at it. In `onCreate` or `onNewIntent`, pass the full URL through as-is. The SDK extracts the `organization` and `invitation` parameters; do not parse them yourself.
+Invitation links are `https` only, so set up [Android App Links](https://auth0.com/docs/get-started/applications/enable-android-app-links-support) so the link opens your app, and set the application's Application Login URI in the Dashboard to that HTTPS URL so invitations point at it. In `onCreate` or `onNewIntent`, pass the full URL through as-is. The SDK extracts the `organization` and `invitation` parameters; do not parse them yourself.
 
 ```kotlin
 intent?.data?.takeIf { it.isHierarchical }?.let { uri -> // opaque URIs (mailto:) make the SDK throw

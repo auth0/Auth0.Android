@@ -78,7 +78,7 @@ https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 
 `{YOUR_APP_PACKAGE_NAME}` is the `applicationId`. With a custom scheme, replace `https` with it.
 
-For `https`, also register the app for [Android App Links](https://auth0.com/docs/applications/enable-android-app-links-support): in the application's Device Settings in the Dashboard, add the package name and the SHA256 fingerprint of the signing certificate (`apksigner verify --print-certs app.apk`). Debug and release builds have different fingerprints. If you use Play App Signing, register the app-signing certificate's SHA-256 from Play Console, not your local upload key, since Play re-signs the APK users install.
+For `https`, also register the app for [Android App Links](https://auth0.com/docs/get-started/applications/enable-android-app-links-support): in the application's Device Settings in the Dashboard, add the package name and the SHA256 fingerprint of the signing certificate (`apksigner verify --print-certs app.apk`). Debug and release builds have different fingerprints. If you use Play App Signing, register the app-signing certificate's SHA-256 from Play Console, not your local upload key, since Play re-signs the APK users install.
 
 ### 3. Create the Auth0 instance
 
@@ -98,23 +98,24 @@ val account = Auth0.getInstance(context)
 ### 4. Log in and log out
 
 ```kotlin
+val loginCallback = object : Callback<Credentials, AuthenticationException> {
+    override fun onSuccess(result: Credentials) {
+        credentialsManager.saveCredentials(result)
+    }
+
+    override fun onFailure(error: AuthenticationException) {
+        when {
+            error.isAuthenticationCanceled -> { /* user closed the browser */ }
+            error.isBrowserAppNotAvailable -> { /* no browser installed */ }
+            else -> { /* inspect error.getCode() / error.getDescription() */ }
+        }
+    }
+}
+
 // on login tap
 WebAuthProvider.login(account)
     .withScope("openid profile email offline_access")
-    .start(this, object : Callback<Credentials, AuthenticationException> {
-        override fun onSuccess(result: Credentials) {
-            credentialsManager.saveCredentials(result)
-        }
-
-        override fun onFailure(error: AuthenticationException) {
-            when {
-                error.isAuthenticationCanceled -> { /* user closed the browser */ }
-                error.isBrowserAppNotAvailable -> { /* no browser installed */ }
-                else -> { /* inspect error.getCode() / error.getDescription() */ }
-            }
-        }
-    })
-
+    .start(this, loginCallback)
 ```
 
 Run logout as a separate action after login has finished. Starting logout resets any login still in flight.
@@ -162,7 +163,10 @@ if (credentialsManager.hasValidCredentials()) {
         }
     })
 } else {
-    // no stored session: run the login from step 4 (WebAuthProvider.login(account).start(...))
+    // no stored session: start the login from step 4
+    WebAuthProvider.login(account)
+        .withScope("openid profile email offline_access")
+        .start(this, loginCallback)
 }
 ```
 

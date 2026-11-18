@@ -80,7 +80,7 @@ val credentials = if (authenticator.authenticatorType == "otp") {
 credentialsManager.saveCredentials(credentials)
 ```
 
-For push, the `bindingCode` is optional; omit it once the user approves on their device.
+For push, the `bindingCode` is optional; omit it once the user approves on their device. Until then the server can answer `verify` with `authorization_pending`, which is Auth0 server behaviour and not defined in this SDK. Check `MfaVerifyException.getCode()`, retry the same `verify` after a short delay, and wait longer on `slow_down`.
 
 ## Enroll
 
