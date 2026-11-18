@@ -224,7 +224,6 @@ $actionsJson
         const val NEXT_SIGNUP_EMAIL_NON_BOOLEAN_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": "true" }, "phone_number": { "required": false } } }"""
         const val NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true } }, "authentication_methods": { "password": { "required": true } } }"""
         const val NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true } }, "authentication_methods": { "password": { "required": false } } }"""
-        const val NEXT_SIGNUP_EMAIL_PASSWORD_NO_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true } }, "authentication_methods": { "password": {} } }"""
         const val NEXT_CONFIRM_SIGNUP_PASSWORD = """{ "action": "action:signup:confirm:v1", "password_complexity_options": { "min_length": 8, "character_types": ["lowercase", "number"] } }"""
         const val NEXT_CONFIRM_SIGNUP = """{ "action": "action:signup:confirm:v1" }"""
         const val NEXT_UNKNOWN = """{ "action": "action:future:unknown:v1" }"""

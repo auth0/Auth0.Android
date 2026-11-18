@@ -115,6 +115,8 @@ try {
 ```
 
 - An empty password counts as none.
+- A password can be at most 2048 characters. The SDK doesn't check this, and a longer one is rejected with the terminal
+  `EmbeddedAuthError.InvalidRequest`, which ends the flow, so limit the field in your UI.
 - The SDK sends the password as it is and the server decides. A missing required password completes with
   `PASSWORD_REQUIRED`, and a password sent to a connection that doesn't collect one with `PASSWORD_NOT_ACCEPTED`.
   Each keeps the flow open, so call `confirmSignup` again. To avoid the round trip, check `ConfirmSignup.password`

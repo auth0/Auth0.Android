@@ -255,7 +255,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      *
      * Pass a [password] when [NextAction.ConfirmSignup.password] is not `null`; it must be passed when
      * [SignupPassword.required] is `true`. An empty [password] counts as none. It is sent as it is, and the
-     * SDK doesn't check it against [SignupPassword.complexity], which is advisory.
+     * SDK doesn't check it against [SignupPassword.complexity], which is advisory, or against the server's limit of
+     * 2048 characters. A longer password is rejected with the terminal [EmbeddedAuthError.InvalidRequest].
      *
      * On success, it yields the [Credentials]. If the server requires further steps the request
      * completes through [EmbeddedAuthException] instead, with
