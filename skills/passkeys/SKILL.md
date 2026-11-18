@@ -76,7 +76,7 @@ val credentials = authentication
 
 ### Identifier verification
 
-If the connection requires verified email or phone, `challenge.verificationRequired` lists `PasskeyVerificationMethod` values. Collect the OTP codes before creating the platform credential, then pass `verification = codes` and `verificationRequired = challenge.verificationRequired.orEmpty()` to `signinWithPasskey`. On `error.isPasskeyVerificationRetryable`, re-collect the codes in `error.passkeyVerificationRequired` and retry with the same credential and `error.passkeyAuthSession`, not the original `challenge.authSession`. Any other error means restarting from `signupWithPasskey`. Optional `deliveryMethod`: `DeliveryMethod.TEXT` or `VOICE`.
+If the connection requires verified email or phone, `challenge.verificationRequired` lists `PasskeyVerificationMethod` values. Collect the OTP codes before creating the platform credential, then pass `verification = codes` and `verificationRequired = challenge.verificationRequired.orEmpty()` to `signinWithPasskey`. On `error.isPasskeyVerificationRetryable`, re-collect the codes in `error.passkeyVerificationRequired` and retry with the same credential and `error.passkeyAuthSession`, not the original `challenge.authSession`. If `error.isMultifactorRequired`, continue with the [mfa](../mfa/SKILL.md) skill instead of restarting. Any other error means restarting from `signupWithPasskey`. Optional `deliveryMethod`: `DeliveryMethod.TEXT` or `VOICE`.
 
 ## Enroll a passkey for a signed-in user
 

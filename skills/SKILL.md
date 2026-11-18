@@ -78,7 +78,7 @@ https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 
 `{YOUR_APP_PACKAGE_NAME}` is the `applicationId`. With a custom scheme, replace `https` with it.
 
-For `https`, also register the app for [Android App Links](https://auth0.com/docs/applications/enable-android-app-links-support): in the application's Device Settings in the Dashboard, add the package name and the SHA256 fingerprint of the signing certificate (`keytool -printcert -jarfile app.apk`). Debug and release builds have different fingerprints.
+For `https`, also register the app for [Android App Links](https://auth0.com/docs/applications/enable-android-app-links-support): in the application's Device Settings in the Dashboard, add the package name and the SHA256 fingerprint of the signing certificate (`apksigner verify --print-certs app.apk`). Debug and release builds have different fingerprints. If you use Play App Signing, register the app-signing certificate's SHA-256 from Play Console, not your local upload key, since Play re-signs the APK users install.
 
 ### 3. Create the Auth0 instance
 
@@ -115,7 +115,12 @@ WebAuthProvider.login(account)
         }
     })
 
-// on logout tap, after login has finished; starting logout resets any login in flight
+```
+
+Run logout as a separate action after login has finished. Starting logout resets any login still in flight.
+
+```kotlin
+// on logout tap
 WebAuthProvider.logout(account)
     .start(this, object : Callback<Void?, AuthenticationException> {
         override fun onSuccess(result: Void?) {
@@ -157,7 +162,7 @@ if (credentialsManager.hasValidCredentials()) {
         }
     })
 } else {
-    // no stored session: start WebAuthProvider.login
+    // no stored session: run the login from step 4 (WebAuthProvider.login(account).start(...))
 }
 ```
 
@@ -217,7 +222,11 @@ authentication.resetPassword("user@example.com", "Username-Password-Authenticati
 authentication.passwordlessWithEmail("user@example.com", PasswordlessType.CODE, "email")
     .start(voidCallback)
 
-// then, once the user types the code they received
+```
+
+Then, in a separate step once the user types the code they received:
+
+```kotlin
 authentication.loginWithEmail("user@example.com", userEnteredCode, "email")
     .validateClaims()
     .start(callback)

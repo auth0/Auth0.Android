@@ -67,7 +67,7 @@ val mfaClient = authentication.mfaClient(mfaToken)
 val authenticator = mfaClient
     .getAuthenticators(factorsAllowed = requirements.challenge.orEmpty().map { it.type })
     .await()
-    .first { it.active } // throws if none is active; enroll instead
+    .first { it.active } // throws NoSuchElementException if none is active
 
 val credentials = if (authenticator.authenticatorType == "otp") {
     mfaClient.verify(MfaVerificationType.Otp(userEnteredCode))
