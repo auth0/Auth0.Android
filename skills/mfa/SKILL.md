@@ -73,7 +73,9 @@ val credentials = if (authenticator.authenticatorType == "otp") {
     mfaClient.verify(MfaVerificationType.Otp(userEnteredCode))
 } else {
     val challenge = mfaClient.challenge(authenticator.id).await()
-    mfaClient.verify(MfaVerificationType.Oob(challenge.oobCode!!, bindingCode = userEnteredCode))
+    // bindingMethod is "prompt" when the user must type a code; push has none
+    val bindingCode = if (challenge.bindingMethod == "prompt") userEnteredCode else null
+    mfaClient.verify(MfaVerificationType.Oob(challenge.oobCode!!, bindingCode))
 }.await()
 
 // verify does not validate the ID token; check the claims you rely on before trusting it

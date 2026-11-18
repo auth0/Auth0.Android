@@ -112,9 +112,21 @@ val loginCallback = object : Callback<Credentials, AuthenticationException> {
     }
 }
 
+val logoutCallback = object : Callback<Void?, AuthenticationException> {
+    override fun onSuccess(result: Void?) {
+        credentialsManager.clearCredentials()
+    }
+
+    override fun onFailure(error: AuthenticationException) { }
+}
+
+// in onCreate: keeps results from being lost if the Activity is recreated while the browser is open
+WebAuthProvider.registerCallbacks(this, loginCallback, logoutCallback)
+
 // on login tap
 WebAuthProvider.login(account)
     .withScope("openid profile email offline_access")
+    // .withAudience("YOUR_API_IDENTIFIER") // if the app calls an API, see step 6
     .start(this, loginCallback)
 ```
 
@@ -123,13 +135,7 @@ Run logout as a separate action after login has finished. Starting logout resets
 ```kotlin
 // on logout tap
 WebAuthProvider.logout(account)
-    .start(this, object : Callback<Void?, AuthenticationException> {
-        override fun onSuccess(result: Void?) {
-            credentialsManager.clearCredentials()
-        }
-
-        override fun onFailure(error: AuthenticationException) { }
-    })
+    .start(this, logoutCallback)
 ```
 
 Coroutines: `WebAuthProvider.login(account).await(context)` returns `Credentials` and `WebAuthProvider.logout(account).await(context)` returns `Unit`; both throw `AuthenticationException`.
@@ -166,6 +172,7 @@ if (credentialsManager.hasValidCredentials()) {
     // no stored session: start the login from step 4
     WebAuthProvider.login(account)
         .withScope("openid profile email offline_access")
+        // .withAudience("YOUR_API_IDENTIFIER") // same audience as step 4
         .start(this, loginCallback)
 }
 ```
