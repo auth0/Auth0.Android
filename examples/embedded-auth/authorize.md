@@ -150,6 +150,7 @@ Some errors end the flow and must not be retried without restarting from `author
 ```kotlin
 when (e.error) {
     EmbeddedAuthError.TooManyWrongOtpAttempts -> { /* too many wrong codes — flow denied */ }
+    EmbeddedAuthError.TooManyResendAttempts   -> { /* too many codes sent to this identifier — restart the flow */ }
     EmbeddedAuthError.ChallengeExpired        -> { /* the code expired — restart the flow */ }
     EmbeddedAuthError.AccessDenied            -> { /* denied for another reason — do not retry */ }
     EmbeddedAuthError.AuthorizationRejected   -> { /* user rejected or canceled (e.g. denied the push) */ }

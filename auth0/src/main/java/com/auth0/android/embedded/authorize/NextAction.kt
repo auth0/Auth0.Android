@@ -91,11 +91,13 @@ public sealed interface NextAction {
     /**
      * Continue by signing up a new user. Act on it with [EmbeddedAuthClient.signup].
      *
-     * [identifiers] lists the identifiers the connection collects at signup.
+     * [identifiers] lists the identifiers the connection collects at signup. [passwordRequirement] says
+     * whether the connection collects a password, which is set up with [EmbeddedAuthClient.confirmSignup].
      */
     @ConsistentCopyVisibility
     public data class Signup internal constructor(
-        public val identifiers: List<SignupIdentifier>
+        public val identifiers: List<SignupIdentifier>,
+        public val passwordRequirement: CredentialRequirement
     ) : NextAction {
         override val capability: EmbeddedCapability = EmbeddedCapability.SIGNUP
     }
@@ -103,8 +105,14 @@ public sealed interface NextAction {
     /**
      * Continue by creating the new user's account once the required identifiers are verified. Act on
      * it with [EmbeddedAuthClient.confirmSignup].
+     *
+     * [password] is `null` when the connection doesn't collect a password. Otherwise the app should ask
+     * for one, and must when [SignupPassword.required] is `true`.
      */
-    public data object ConfirmSignup : NextAction {
+    @ConsistentCopyVisibility
+    public data class ConfirmSignup internal constructor(
+        public val password: SignupPassword?
+    ) : NextAction {
         override val capability: EmbeddedCapability = EmbeddedCapability.CONFIRM_SIGNUP
     }
 
