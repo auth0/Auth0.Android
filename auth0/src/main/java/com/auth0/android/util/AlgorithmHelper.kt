@@ -13,6 +13,8 @@ import java.security.SecureRandom
  */
 internal open class AlgorithmHelper {
 
+    private val secureRandom = SecureRandom()
+
     open fun getASCIIBytes(value: String): ByteArray = value.toByteArray(StandardCharsets.US_ASCII)
 
     /**
@@ -32,7 +34,7 @@ internal open class AlgorithmHelper {
     /** A random, base64url-encoded code verifier made of 32 random bytes. */
     open fun generateCodeVerifier(): String {
         val code = ByteArray(32)
-        SecureRandom().nextBytes(code)
+        secureRandom.nextBytes(code)
         return encode(code)
     }
 

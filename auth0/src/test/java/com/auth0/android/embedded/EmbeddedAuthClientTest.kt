@@ -219,13 +219,116 @@ public class EmbeddedAuthClientTest {
             on { generateCodeVerifier() } doReturn "verifier"
             on { generateCodeChallenge(any()) } doThrow IllegalStateException("no SHA-256")
         }
-        val failing = EmbeddedAuthClient(auth0, helper)
+        val failing = EmbeddedAuthClient.create(auth0, helper)
 
         val error = assertEmbeddedErrorSuspending { failing.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
 
         assertThat(error.error, `is`(EmbeddedAuthError.Unknown))
         assertThat(error.cause, instanceOf(IllegalStateException::class.java))
         assertThat(mockAPI.server.requestCount, `is`(0))
+    }
+
+    @Test
+    public fun `authorize sends exactly the initial request fields`(): Unit = runTest {
+        mockAPI.willReturnInsufficientAuthorization()
+
+        assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(
+            body.keys().asSequence().toSet(),
+            `is`(setOf("client_id", "connection", "scope", "capabilities", "code_challenge", "code_challenge_method"))
+        )
+    }
+
+    @Test
+    public fun `the token exchange sends exactly the authorization code grant fields`(): Unit = runTest {
+        mockAPI.willReturnInsufficientAuthorization()
+        assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        client.verifyOtp("123456", OtpType.OOB).await()
+        mockAPI.takeRequest()
+
+        assertThat(
+            bodyOf(mockAPI.takeRequest()).keys().asSequence().toSet(),
+            `is`(setOf("client_id", "grant_type", "code", "code_verifier"))
+        )
+    }
+
+    @Test
+    public fun `only authorize carries PKCE parameters, not the later steps`(): Unit = runTest {
+        mockAPI.willReturnInsufficientAuthorization()
+        assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnInsufficientAuthorization(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION)
+        assertEmbeddedErrorSuspending { client.identify("jane@example.com", IdentifierType.EMAIL).await() }
+        val identify = bodyOf(mockAPI.takeRequest())
+        mockAPI.willReturnInsufficientAuthorization(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION)
+        assertEmbeddedErrorSuspending { client.challengeEmail().await() }
+        val challenge = bodyOf(mockAPI.takeRequest())
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        client.verifyOtp("123456", OtpType.OOB).await()
+        val verify = bodyOf(mockAPI.takeRequest())
+
+        for (body in listOf(identify, challenge, verify)) {
+            assertThat(body.has("code_challenge"), `is`(false))
+            assertThat(body.has("code_challenge_method"), `is`(false))
+            assertThat(body.has("code_verifier"), `is`(false))
+        }
+    }
+
+    @Test
+    public fun `a rejected token exchange surfaces SessionExpired on invalid_grant`(): Unit = runTest {
+        mockAPI.willReturnInsufficientAuthorization()
+        assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnInvalidGrant()
+
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.SessionExpired))
+    }
+
+    @Test
+    public fun `overlapping authorize calls keep the verifier and the session of the same response`(): Unit = runTest {
+        val first = client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION)
+        val second = client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION)
+        mockAPI.willReturnInsufficientAuthorization(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION)
+        assertEmbeddedErrorSuspending { second.await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnInsufficientAuthorization(EmbeddedAuthMockServer.AUTH_SESSION)
+        assertEmbeddedErrorSuspending { first.await() }
+        val firstChallenge = bodyOf(mockAPI.takeRequest()).getString("code_challenge")
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        client.verifyOtp("123456", OtpType.OOB).await()
+        val verify = bodyOf(mockAPI.takeRequest())
+        val exchange = bodyOf(mockAPI.takeRequest())
+
+        assertThat(verify.getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+        assertThat(s256(exchange.getString("code_verifier")), `is`(firstChallenge))
+    }
+
+    @Test
+    public fun `a failed challenge creation abandons the flow in progress`(): Unit = runTest {
+        val helper = mock<AlgorithmHelper> {
+            on { generateCodeVerifier() } doReturn "verifier"
+            on { generateCodeChallenge(any()) } doReturn "challenge" doThrow IllegalStateException("no SHA-256")
+        }
+        val flaky = EmbeddedAuthClient.create(auth0, helper)
+        mockAPI.willReturnInsufficientAuthorization()
+        assertEmbeddedErrorSuspending { flaky.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+        assertEmbeddedErrorSuspending { flaky.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        val error = assertEmbeddedErrorSuspending { flaky.identify("jane@example.com", IdentifierType.EMAIL).await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
     // ── verifyOtp — token exchange ──────────────────────────────────────────────

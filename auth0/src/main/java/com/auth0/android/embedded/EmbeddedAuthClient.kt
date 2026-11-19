@@ -34,7 +34,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
  * **Note**
  * Embedded Authorization is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta). Please reach out to Auth0 support to get it enabled for your tenant.
  */
-public class EmbeddedAuthClient internal constructor(
+public class EmbeddedAuthClient private constructor(
     private val auth0: Auth0,
     private val algorithmHelper: AlgorithmHelper
 ) {
@@ -91,7 +91,6 @@ public class EmbeddedAuthClient internal constructor(
                 )
             )
         }
-        transactionState = EmbeddedAuthState(codeVerifier = verifier)
         val request = factory.post(authorizeUrl)
             .addParameters(buildMap {
                 put(CLIENT_ID_KEY, clientId)
@@ -102,7 +101,7 @@ public class EmbeddedAuthClient internal constructor(
                 put(CODE_CHALLENGE_METHOD_KEY, CODE_CHALLENGE_METHOD_S256)
             })
             .addParameter(CAPABILITIES_KEY, capabilities.map { it.value })
-        return stepping(request)
+        return stepping(request) { error -> updateSessionFromFailure(error, verifier) }
     }
 
     /**
@@ -330,8 +329,9 @@ public class EmbeddedAuthClient internal constructor(
     )
 
     private fun stepping(
-        request: Request<Void?, EmbeddedAuthException>
-    ): Request<Void?, EmbeddedAuthException> = StepRequest(request, ::updateSessionFromFailure)
+        request: Request<Void?, EmbeddedAuthException>,
+        onStepFailure: (EmbeddedAuthException) -> Unit = { error -> updateSessionFromFailure(error) }
+    ): Request<Void?, EmbeddedAuthException> = StepRequest(request, onStepFailure)
 
     /**
      * Wraps a final step. The verifier is captured here because the session state is cleared as soon as
@@ -343,7 +343,7 @@ public class EmbeddedAuthClient internal constructor(
     ): Request<Credentials, EmbeddedAuthException> = AdvancingRequest(
         authorize = request,
         exchange = { code -> exchange(code, codeVerifier) },
-        onStepFailure = ::updateSessionFromFailure,
+        onStepFailure = { error -> updateSessionFromFailure(error) },
         onFlowComplete = { transactionState = null }
     )
 
@@ -372,19 +372,26 @@ public class EmbeddedAuthClient internal constructor(
             .toString()
     }
 
-    private fun updateSessionFromFailure(error: EmbeddedAuthException) {
+    private fun updateSessionFromFailure(error: EmbeddedAuthException, authorizeVerifier: String? = null) {
         if (error.statusCode in 500..599) return
 
         when (error.error) {
             is EmbeddedAuthError.InsufficientAuthorization ->
-                error.authSession?.let { session -> transactionState = transactionState?.copy(authSession = session) }
+                error.authSession?.let { session ->
+                    transactionState = authorizeVerifier?.let { EmbeddedAuthState(it, session) }
+                        ?: transactionState?.copy(authSession = session)
+                }
 
             is EmbeddedAuthError.Network -> Unit
             else -> transactionState = null
         }
     }
 
-    private companion object {
+    internal companion object {
+        @JvmSynthetic
+        fun create(auth0: Auth0, algorithmHelper: AlgorithmHelper): EmbeddedAuthClient =
+            EmbeddedAuthClient(auth0, algorithmHelper)
+
         private const val EMBEDDED_PATH = "e"
         private const val AUTHORIZE_PATH = "authorize"
         private const val OAUTH_PATH = "oauth"
