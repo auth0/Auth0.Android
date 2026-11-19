@@ -1,6 +1,7 @@
 package com.auth0.android.provider;
 
 import com.auth0.android.NetworkErrorException;
+import com.auth0.android.util.AlgorithmHelper;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.Callback;
