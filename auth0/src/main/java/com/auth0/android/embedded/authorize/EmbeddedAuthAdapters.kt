@@ -11,6 +11,7 @@ import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.ResponseUtils.isNetworkError
 import com.google.gson.Gson
+import com.google.gson.ToNumberPolicy
 import java.io.IOException
 import java.io.Reader
 
@@ -32,6 +33,7 @@ private const val IP_BLOCKED = "ip_blocked"
 private const val INVALID_CODE = "invalid_code"
 private const val INVALID_IDENTIFIER_OR_CODE = "invalid_identifier_or_code"
 private const val INVALID_IDENTIFIER_OR_PASSWORD = "invalid_identifier_or_password"
+private const val INVALID_PASSKEY = "invalid_passkey"
 private const val INVALID_GRANT = "invalid_grant"
 private const val INVALID_REQUEST = "invalid_request"
 private const val TOO_MANY_REQUESTS_STATUS = 429
@@ -51,7 +53,9 @@ internal fun authorizeCodeAdapter(gson: Gson): JsonAdapter<AuthorizeCode> =
  * Translates every embedded-authentication error response into an [EmbeddedAuthException].
  */
 internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
-    val mapAdapter = forMap(GsonProvider.gson)
+    val mapAdapter = forMap(
+        GsonProvider.gson.newBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create()
+    )
     return object : ErrorAdapter<EmbeddedAuthException> {
 
         override fun fromRawResponse(
@@ -136,6 +140,7 @@ internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
                 EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE
             INVALID_IDENTIFIER_OR_PASSWORD ->
                 EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD
+            INVALID_PASSKEY -> EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSKEY
             AUTHORIZATION_PENDING ->
                 EmbeddedAuthError.InsufficientAuthorization.Reason.AUTHORIZATION_PENDING
             SLOW_DOWN -> EmbeddedAuthError.InsufficientAuthorization.Reason.SLOW_DOWN

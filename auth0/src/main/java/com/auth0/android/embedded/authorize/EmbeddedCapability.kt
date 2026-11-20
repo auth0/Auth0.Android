@@ -10,6 +10,7 @@ public enum class EmbeddedCapability(public val value: String) {
     CHALLENGE_PUSH("action:challenge:push:v1"),
     VERIFY_OTP("action:verify:otp:v1"),
     VERIFY_PASSWORD("action:verify:password:v1"),
+    VERIFY_PASSKEY("action:verify:passkey:v1"),
     VERIFY_OOB("action:verify:oob:v1"),
     VERIFY_RECOVERY_CODE("action:verify:recovery-code:v1"),
     CONFIRM_RECOVERY_CODE("action:confirm:recovery-code:v1"),

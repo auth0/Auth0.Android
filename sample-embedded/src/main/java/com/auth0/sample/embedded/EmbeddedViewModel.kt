@@ -1,6 +1,7 @@
 package com.auth0.sample.embedded
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.auth0.android.Auth0
@@ -52,11 +53,13 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
         client.authorize(connection, audience = defaultAudience).await()
     }
 
-    fun identifyEmail(email: String): Unit = runStep { client.identify(email, IdentifierType.EMAIL).await() }
+    fun identifyEmail(email: String): Unit =
+        runStep { client.identify(email, IdentifierType.EMAIL).await() }
 
     fun challengeEmail(index: Int): Unit = runStep { client.challengeEmail(index).await() }
 
-    fun identifyPhone(phone: String): Unit = runStep { client.identify(phone, IdentifierType.PHONE).await() }
+    fun identifyPhone(phone: String): Unit =
+        runStep { client.identify(phone, IdentifierType.PHONE).await() }
 
     fun identifyUsername(username: String): Unit =
         runStep { client.identify(username, IdentifierType.USERNAME).await() }
@@ -70,10 +73,19 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
     fun verifyRecoveryCode(code: String): Unit = runStep { client.verifyRecoveryCode(code).await() }
 
     /** Terminal step: on success this yields [Credentials][com.auth0.android.result.Credentials]. */
-    fun verifyOtp(code: String, type: OtpType): Unit = runTerminalStep { client.verifyOtp(code, type).await() }
+    fun verifyOtp(code: String, type: OtpType): Unit =
+        runTerminalStep { client.verifyOtp(code, type).await() }
 
     /** Terminal step: yields credentials, or continues if the server requires a second factor. */
-    fun verifyPassword(password: String): Unit = runTerminalStep { client.verifyPassword(password).await() }
+    fun verifyPassword(password: String): Unit =
+        runTerminalStep { client.verifyPassword(password).await() }
+
+    /**
+     * Terminal step: submits the passkey assertion. Yields credentials, or continues with a fresh
+     * [NextAction.VerifyPasskey] if the passkey was rejected, or with MFA if the tenant requires it.
+     */
+    fun verifyPasskey(authenticationResponseJson: String): Unit =
+        runTerminalStep { client.verifyPasskey(authenticationResponseJson).await() }
 
     /** Terminal step: acknowledges the rotated recovery code. */
     fun confirmRecoveryCode(): Unit = runTerminalStep { client.confirmRecoveryCode().await() }
@@ -91,8 +103,10 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
      */
     fun verifyPush(initialPollInMs: Int) {
         pollJob?.cancel()
-        val offered = (_authorizeState.value as? AuthorizeUiState.ActionsAvailable)?.actions.orEmpty()
-        _authorizeState.value = AuthorizeUiState.Polling(offered.filterNot { it is NextAction.VerifyOob })
+        val offered =
+            (_authorizeState.value as? AuthorizeUiState.ActionsAvailable)?.actions.orEmpty()
+        _authorizeState.value =
+            AuthorizeUiState.Polling(offered.filterNot { it is NextAction.VerifyOob })
         pollJob = viewModelScope.launch {
             var delayMs = initialPollInMs.toLong()
             while (true) {
@@ -146,6 +160,7 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
             _authorizeState.value = try {
                 AuthorizeUiState.Authenticated(step())
             } catch (error: EmbeddedAuthException) {
+                error.logStepFailure()
                 error.toAuthorizeState()
             }
         }
@@ -165,16 +180,29 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
                 step()
                 AuthorizeUiState.Message("Step completed without a continuation.")
             } catch (error: EmbeddedAuthException) {
+                error.logStepFailure()
                 error.toAuthorizeState()
             }
         }
     }
 
+    private fun EmbeddedAuthException.logStepFailure() {
+        val reason = (error as? EmbeddedAuthError.InsufficientAuthorization)?.reason
+        Log.e(
+            "EmbeddedStep",
+            "step failed: error=${error::class.simpleName}, reason=$reason, code=$code, status=$statusCode, description=$description"
+        )
+    }
+
     private fun EmbeddedAuthException.toAuthorizeState(): AuthorizeUiState =
         when (val e = error) {
             is EmbeddedAuthError.InsufficientAuthorization ->
-                if (e.nextActions.isNotEmpty()) AuthorizeUiState.ActionsAvailable(e.nextActions, e.reason)
+                if (e.nextActions.isNotEmpty()) AuthorizeUiState.ActionsAvailable(
+                    e.nextActions,
+                    e.reason
+                )
                 else AuthorizeUiState.Failed(this)
+
             else -> AuthorizeUiState.Failed(this)
         }
 

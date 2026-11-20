@@ -62,6 +62,7 @@ if (error is EmbeddedAuthError.InsufficientAuthorization) {
             is NextAction.IdentifyPhone       -> { /* show phone field, call identify(..., PHONE) */ }
             is NextAction.IdentifyUsername    -> { /* show username field, call identify(..., USERNAME) */ }
             is NextAction.VerifyPassword      -> { /* show password field, call verifyPassword() */ }
+            is NextAction.VerifyPasskey       -> { /* run the passkey ceremony with action.requestJson, call verifyPasskey() */ }
             is NextAction.ChallengeEmail      -> { /* send email code, call challengeEmail(action.index) */ }
             is NextAction.ChallengePhone      -> { /* send SMS/voice code, call challengePhone(action.index, ...) */ }
             is NextAction.ChallengePush       -> { /* trigger push, call challengePush(action.index) */ }
@@ -75,7 +76,7 @@ if (error is EmbeddedAuthError.InsufficientAuthorization) {
 }
 ```
 
-See the dedicated examples for each factor: [Username & Password](password-authorize.md), [Phone OTP (SMS/Voice)](phone-authorize.md), [Push (OOB)](push-oob-polling.md), [TOTP](totp.md), and [Recovery Code](recovery-code.md).
+See the dedicated examples for each factor: [Username & Password](password-authorize.md), [Passkey](passkey.md), [Phone OTP (SMS/Voice)](phone-authorize.md), [Push (OOB)](push-oob-polling.md), [TOTP](totp.md), and [Recovery Code](recovery-code.md).
 
 #### Identify the user
 

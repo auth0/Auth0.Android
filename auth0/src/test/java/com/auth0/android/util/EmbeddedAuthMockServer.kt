@@ -84,6 +84,17 @@ $actionsJson
         return this
     }
 
+    /** The recoverable `403` after a rejected passkey: rotated session and a fresh passkey offer. */
+    fun willReturnInvalidPasskey(): EmbeddedAuthMockServer {
+        server.enqueue(
+            responseWithJSON(
+                """{ "error": "insufficient_authorization", "error_description": "invalid_passkey", "auth_session": "$ROTATED_AUTH_SESSION", "next": [ $NEXT_VERIFY_PASSKEY_FRESH ] }""",
+                403
+            )
+        )
+        return this
+    }
+
     fun willReturnTooManyWrongOtpAttempts(): EmbeddedAuthMockServer {
         server.enqueue(responseWithJSON("""{ "error": "access_denied", "error_description": "too_many_wrong_otp_attempts" }""", 403))
         return this
@@ -207,6 +218,8 @@ $actionsJson
         const val NEXT_SIGNUP_PHONE_NO_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true }, "phone_number": {} } }"""
         const val NEXT_SIGNUP_EMAIL_NON_BOOLEAN_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": "true" }, "phone_number": { "required": false } } }"""
         const val NEXT_CONFIRM_SIGNUP = """{ "action": "action:signup:confirm:v1" }"""
+        const val NEXT_VERIFY_PASSKEY = """{ "action": "action:verify:passkey:v1", "authn_params_public_key": { "challenge": "Y2hhbGxlbmdl", "timeout": 900000, "userVerification": "preferred", "rpId": "login.example.com" } }"""
+        const val NEXT_VERIFY_PASSKEY_FRESH = """{ "action": "action:verify:passkey:v1", "authn_params_public_key": { "challenge": "ZnJlc2g", "timeout": 900000, "userVerification": "preferred", "rpId": "login.example.com" } }"""
         const val NEXT_UNKNOWN = """{ "action": "action:future:unknown:v1" }"""
         const val IDENTIFIER = "jane@example.com"
         const val AUTHORIZATION_CODE = "the-authorization-code"

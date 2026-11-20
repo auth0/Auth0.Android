@@ -49,5 +49,10 @@
     <string name="action_signup">Sign up</string>
     <string name="label_confirm_signup">Your details are verified</string>
     <string name="action_confirm_signup">Create account</string>
+    <string name="label_passkey">Sign in with a passkey</string>
+    <string name="action_use_passkey">Use passkey</string>
+    <string name="error_invalid_passkey">That passkey wasn\'t accepted. Try again.</string>
+    <string name="error_no_passkey">No passkey for this app is available on this device.</string>
+    <string name="error_passkey_failed">The passkey sign-in couldn\'t complete. Try again.</string>
     <string name="label_unsupported_action">Unsupported action: %1$s</string>
 </resources>

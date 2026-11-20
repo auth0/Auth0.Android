@@ -13,6 +13,8 @@ import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.embedded.authorize.StepRequest
 import com.auth0.android.embedded.authorize.authorizeCodeAdapter
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
+import com.auth0.android.embedded.passkey.InvalidPasskeyResponseException
+import com.auth0.android.embedded.passkey.passkeyAuthnResponse
 import com.auth0.android.request.Request
 import com.auth0.android.request.internal.GsonAdapter
 import com.auth0.android.request.internal.GsonProvider
@@ -58,7 +60,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * @param scope space-separated scopes to request. Must include `openid` for the terminal token
      * exchange to return an ID token; defaults to `"openid profile email offline_access"`.
      * @param audience optional API audience to request an access token for.
-     * @param capabilities the set of steps this client can handle in the flow.
+     * @param capabilities the set of steps this client can handle in the flow. Defaults to every step the
+     * SDK models.
      */
     @JvmOverloads
     public fun authorize(
@@ -144,6 +147,38 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         terminalStep(EmbeddedCapability.VERIFY_PASSWORD) {
             addParameter(PASSWORD_KEY, password)
         }
+
+    /**
+     * Signs the user in with a passkey. Completes the flow when no further factor is required.
+     *
+     * Call it with the `authenticationResponseJson` of the credential the platform returned after
+     * running the ceremony for [NextAction.VerifyPasskey.requestJson]. Only the fields the server
+     * accepts are sent. The passkey must be discoverable, so the response must carry a `userHandle`.
+     *
+     * On success, it yields the [Credentials]. If the passkey is rejected, the request completes through
+     * [EmbeddedAuthException] with [EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSKEY]
+     * and a new [NextAction.VerifyPasskey] that carries a fresh challenge. If the server requires further
+     * steps, [EmbeddedAuthError.InsufficientAuthorization.nextActions] carry them.
+     *
+     * A response that doesn't match the server's schema completes with [EmbeddedAuthError.InvalidInput]
+     * without sending a request; the flow is unchanged.
+     */
+    public fun verifyPasskey(authenticationResponseJson: String): Request<Credentials, EmbeddedAuthException> {
+        val authnResponse = try {
+            passkeyAuthnResponse(authenticationResponseJson)
+        } catch (e: InvalidPasskeyResponseException) {
+            return FailedRequest(
+                EmbeddedAuthException(
+                    INVALID_INPUT_ERROR,
+                    e.message ?: DEFAULT_INVALID_INPUT_DESCRIPTION,
+                    error = EmbeddedAuthError.InvalidInput
+                )
+            )
+        }
+        return terminalStep(EmbeddedCapability.VERIFY_PASSKEY) {
+            addParameter(AUTHN_RESPONSE_KEY, authnResponse)
+        }
+    }
 
     /**
      * Continues the flow by requesting a phone challenge for the authenticator at [index].
@@ -367,6 +402,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         private const val PHONE_KEY = "phone"
         private const val USERNAME_KEY = "username"
         private const val PASSWORD_KEY = "password"
+        private const val AUTHN_RESPONSE_KEY = "authn_response"
         private const val DELIVERY_METHOD_KEY = "delivery_method"
         private const val OTP_KEY = "otp"
         private const val INDEX_KEY = "index"
@@ -375,6 +411,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         private const val CODE_KEY = "code"
         private const val GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code"
         private const val NO_ACTIVE_SESSION_ERROR = "no_active_session"
+        private const val INVALID_INPUT_ERROR = "invalid_input"
+        private const val DEFAULT_INVALID_INPUT_DESCRIPTION = "The input was rejected."
 
         private const val DEFAULT_SCOPE = "openid profile email offline_access"
 
@@ -391,7 +429,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
             EmbeddedCapability.VERIFY_RECOVERY_CODE,
             EmbeddedCapability.CONFIRM_RECOVERY_CODE,
             EmbeddedCapability.SIGNUP,
-            EmbeddedCapability.CONFIRM_SIGNUP
+            EmbeddedCapability.CONFIRM_SIGNUP,
+            EmbeddedCapability.VERIFY_PASSKEY
         )
     }
 
