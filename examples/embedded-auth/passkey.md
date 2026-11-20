@@ -13,6 +13,10 @@ identifies the user.
 ## Requirements
 
 - Passkeys are enabled on the connection, and the request is made on a [custom domain](https://auth0.com/docs/customize/custom-domains). Otherwise the server doesn't offer `VerifyPasskey`.
+- Your app is registered on the Auth0 application: set its Android **App Package Name** and **SHA-256 certificate fingerprints** under the application's mobile settings. The fingerprint is the one of the key that signs the build you run, so a debug build needs the debug key. The server uses this in two ways:
+  - It serves `https://<rpId>/.well-known/assetlinks.json` with your app for the `delegate_permission/common.get_login_creds` relation. Credential Manager checks it, and without it the ceremony fails with `RP ID cannot be validated`.
+  - It accepts a passkey only from an app it knows. A passkey from an app that isn't registered is rejected with `INVALID_PASSKEY`, even though the ceremony succeeded.
+
 - Android 9 (API 28) or later, which Credential Manager requires. `authorize` asks for passkeys by default, so on earlier versions pass a `capabilities` set that leaves out `EmbeddedCapability.VERIFY_PASSKEY`.
 - The user signs in with a **discoverable** passkey, one that stores the user handle. A response without a `userHandle` is rejected with `EmbeddedAuthError.InvalidInput`.
 - Your app uses [Credential Manager](https://developer.android.com/identity/sign-in/credential-manager) to run the passkey ceremony. The SDK doesn't depend on it, so add it yourself:
