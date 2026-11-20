@@ -85,15 +85,16 @@ try {
 | Property | Description |
 | --- | --- |
 | `requestJson` | The complete options object, ready for `GetPublicKeyCredentialOption`. Use this to run the ceremony. |
-| `options.challenge` | The single-use challenge. |
+| `options.challenge` | The challenge. Use it for one attempt only. |
 | `options.timeout` | How long, in milliseconds, the ceremony may take. |
 | `options.rpId` | The relying party the passkey is scoped to. |
 | `options.userVerification` | `REQUIRED`, `PREFERRED` or `DISCOURAGED`. |
 | `options.hints` | Preferred authenticator hints. Empty when the server sent none. |
 | `options.allowCredentials` | The credentials the server restricts the ceremony to, each as the server sent it. Empty when the server sent none. |
 
-Each challenge works once. After a rejected passkey, use the new `VerifyPasskey` from the error's
-`nextActions`; don't reuse the previous `requestJson`.
+Use each challenge for one attempt. After a rejected passkey, use the new `VerifyPasskey` from the error's
+`nextActions`; don't reuse the previous `requestJson`. A rejection leaves only the passkey action to continue
+with, so to let the user sign in another way, start a new flow with `authorize()`.
 
 <details>
   <summary>Using callbacks</summary>

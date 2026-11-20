@@ -33,7 +33,8 @@ import kotlinx.coroutines.launch
 /**
  * Offers passkey sign-in. Runs the Credential Manager ceremony with the server's [requestJson] and
  * hands the resulting `authenticationResponseJson` to [onAssertion]. A canceled or failed ceremony
- * leaves the flow unchanged, so the user can retry or pick another action.
+ * leaves the flow unchanged, so the user can retry or pick another action. A passkey the server rejects
+ * leaves only a new passkey offer, so signing in another way means starting a new flow.
  */
 @Composable
 internal fun PasskeyCard(

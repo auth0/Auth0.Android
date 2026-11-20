@@ -5,7 +5,7 @@ package com.auth0.android.embedded.passkey
  */
 @ConsistentCopyVisibility
 public data class PasskeyRequestOptions internal constructor(
-    /** The single-use, base64url-encoded challenge the authenticator signs. */
+    /** The base64url-encoded challenge the authenticator signs. Use it for one attempt only. */
     public val challenge: String,
 
     /** How long, in milliseconds, the ceremony may take. */

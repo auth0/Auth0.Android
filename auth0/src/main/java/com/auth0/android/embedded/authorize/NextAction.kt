@@ -35,8 +35,8 @@ public sealed interface NextAction {
      *
      * [options] exposes the main WebAuthn options. [requestJson] is the complete options object the
      * server sent, ready to use as the request JSON of a Credential Manager `GetPublicKeyCredentialOption`.
-     * The challenge is single-use: after a failed attempt the server offers a new [VerifyPasskey] with a
-     * fresh one.
+     * Use each challenge for one attempt: after a failed attempt the server offers a new [VerifyPasskey]
+     * with a fresh one.
      */
     @ConsistentCopyVisibility
     public data class VerifyPasskey internal constructor(
