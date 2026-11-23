@@ -1,5 +1,11 @@
 # Change Log
 
+## [5.0.0-beta.3](https://github.com/auth0/Auth0.Android/tree/5.0.0-beta.3) (2026-11-11)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/5.0.0-beta.2...5.0.0-beta.3)
+
+**Added**
+- feat(embedded): add signup support for email and phone identifer [\#1123](https://github.com/auth0/Auth0.Android/pull/1123) ([pmathew92](https://github.com/pmathew92))
+
 ## [5.0.0-beta.2](https://github.com/auth0/Auth0.Android/tree/5.0.0-beta.2) (2026-11-02)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/5.0.0-beta.1...5.0.0-beta.2)
 
@@ -20,6 +26,15 @@
 
 **Added**
 - feat(embedded): add /e/authorize email OTP flow  [\#1075](https://github.com/auth0/Auth0.Android/pull/1075) ([pmathew92](https://github.com/pmathew92))
+## [4.3.1](https://github.com/auth0/Auth0.Android/tree/4.3.1) (2026-11-12)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.3.0...4.3.1)
+
+**Changed**
+- docs(myaccount): mark the My Account Profile API as Beta [\#1124](https://github.com/auth0/Auth0.Android/pull/1124) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
+**Fixed**
+- fix(webauth): retry code exchange while network is still blocked, make it configurable [\#1125](https://github.com/auth0/Auth0.Android/pull/1125) ([subhankarmaiti](https://github.com/subhankarmaiti))
+
 ## [4.3.0](https://github.com/auth0/Auth0.Android/tree/4.3.0) (2026-10-30)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.2.1...4.3.0)
 

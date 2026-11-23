@@ -25,6 +25,18 @@ private const val MAX_USER_HANDLE_LENGTH = 100
 
 private val AUTHENTICATOR_ATTACHMENTS = setOf("platform", "cross-platform")
 
+/**
+ * The result of a passkey sign-in ceremony, as the platform returned it. Pass it to
+ * [com.auth0.android.embedded.EmbeddedAuthClient.verifyPasskey].
+ *
+ * @property authenticationResponseJson the `authenticationResponseJson` of the `PublicKeyCredential` that
+ * Credential Manager returned for [com.auth0.android.embedded.authorize.NextAction.VerifyPasskey.requestJson].
+ */
+public data class PasskeyAssertion(public val authenticationResponseJson: String) {
+
+    override fun toString(): String = "PasskeyAssertion(authenticationResponseJson='xxxxx')"
+}
+
 /** The assertion was rejected locally; the message names the field and never includes its value. */
 internal class InvalidPasskeyResponseException(message: String) : IllegalArgumentException(message)
 

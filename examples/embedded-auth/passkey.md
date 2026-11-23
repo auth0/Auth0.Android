@@ -61,7 +61,7 @@ val assertionJson = try {
 
 // 3. Submit the assertion. Returns Credentials.
 try {
-    val credentials = embedded.verifyPasskey(assertionJson).await()
+    val credentials = embedded.verifyPasskey(PasskeyAssertion(assertionJson)).await()
     // credentials.accessToken, credentials.idToken, ...
 } catch (e: EmbeddedAuthException) {
     when (val error = e.error) {
@@ -100,7 +100,7 @@ with, so to let the user sign in another way, start a new flow with `authorize()
   <summary>Using callbacks</summary>
 
 ```kotlin
-embedded.verifyPasskey(assertionJson)
+embedded.verifyPasskey(PasskeyAssertion(assertionJson))
     .start(object : Callback<Credentials, EmbeddedAuthException> {
         override fun onSuccess(result: Credentials) { /* signed in */ }
         override fun onFailure(error: EmbeddedAuthException) { /* branch on error.error as in the coroutine sample */ }
@@ -116,7 +116,7 @@ Auth0 auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN");
 EmbeddedAuthClient embedded = new EmbeddedAuthClient(auth0);
 
 // assertionJson is PublicKeyCredential.getAuthenticationResponseJson() from Credential Manager.
-embedded.verifyPasskey(assertionJson)
+embedded.verifyPasskey(new PasskeyAssertion(assertionJson))
     .start(new Callback<Credentials, EmbeddedAuthException>() {
         @Override public void onSuccess(Credentials credentials) {
             // credentials.getAccessToken()

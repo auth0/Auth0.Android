@@ -708,13 +708,13 @@ myAccountClient.updateAuthenticationMethodById("{Authentication_Id}", "{Name}")
 ```
 </details>
 
-### Get the User Profile
+### Get the User Profile [Beta]
 **Scopes required:** `read:me:profile`
 
 Retrieves the current user's profile. Each entry in `profilePolicy` describes whether the user can edit a field (`access`), where its value comes from (`source`), and why it is read-only (`reason`), so you can render an editable or read-only UI without checking the connection type. Entries are keyed by a JSON Pointer to the field, e.g. `/given_name`. `GetUserProfileOptions` and `UpdateUserProfileRequest` are in the `com.auth0.android.myaccount.request` package.
 
 > [!NOTE]
-> The My Account profile endpoints are currently in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). To request access to this feature, contact your Auth0 representative.
+> The My Account profile API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta). It might change before General Availability, and Auth0 does not support beta functionality for production use. The feature must be enabled for your tenant.
 
 **Prerequisites:**
 
@@ -773,13 +773,13 @@ myAccountClient.getUserProfile(options).start(callback);
 ```
 </details>
 
-### Update the User Profile
+### Update the User Profile [Beta]
 **Scopes required:** `update:me:profile`
 
 Updates the user's editable profile fields, and returns the full updated profile.
 
 > [!NOTE]
-> The My Account profile endpoints are currently in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). To request access to this feature, contact your Auth0 representative.
+> The My Account profile API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta). It might change before General Availability, and Auth0 does not support beta functionality for production use. The feature must be enabled for your tenant.
 
 - Properties left as `null` in `UpdateUserProfileRequest` are not sent and remain unchanged.
 - An empty `UpdateUserProfileRequest()` is valid and returns the current profile.
@@ -787,7 +787,7 @@ Updates the user's editable profile fields, and returns the full updated profile
 
 **Prerequisites:**
 
-The same as [Get the User Profile](#get-the-user-profile), with the `update:me:profile` scope.
+The same as [Get the User Profile](#get-the-user-profile-beta), with the `update:me:profile` scope.
 
 ```kotlin
 val request = UpdateUserProfileRequest(givenName = "Jane", nickname = "jane")

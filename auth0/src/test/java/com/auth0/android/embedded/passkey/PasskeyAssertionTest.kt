@@ -28,6 +28,14 @@ public class PasskeyAssertionTest {
     """.trimIndent()
 
     @Test
+    public fun toStringHidesTheResponse() {
+        val text = PasskeyAssertion(validAssertion).toString()
+
+        assertThat(text, not(containsString("the-signature")))
+        assertThat(text, not(containsString("user-handle")))
+    }
+
+    @Test
     public fun `builds authn_response with exactly the allowed fields`() {
         val result = passkeyAuthnResponse(validAssertion)
 

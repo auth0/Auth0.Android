@@ -20,6 +20,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Configure CI
+        uses: ./.github/actions/setup
+
       - name: Build with gradle
         run: ./gradlew :auth0:assembleRelease
 

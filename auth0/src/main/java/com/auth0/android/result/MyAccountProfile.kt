@@ -11,6 +11,8 @@ import java.lang.reflect.Type
 /**
  * The current user's profile, as returned by the My Account API `/me/v1/profile` endpoint.
  *
+ * This API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta) and might change before General Availability.
+ *
  * Every property is nullable: the server omits fields that are not set for the user, and
  * any field can be trimmed from the response by using
  * [com.auth0.android.myaccount.request.GetUserProfileOptions.fields].
@@ -57,6 +59,8 @@ public data class MyAccountProfile(
 
 /**
  * Describes whether a profile field can be edited by the user and why.
+ *
+ * This API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta) and might change before General Availability.
  */
 @JsonAdapter(ProfileFieldPolicy.Deserializer::class)
 public data class ProfileFieldPolicy(
@@ -100,6 +104,8 @@ public data class ProfileFieldPolicy(
 
 /**
  * Whether a profile field can be edited by the user.
+ *
+ * This API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta) and might change before General Availability.
  */
 public enum class ProfileFieldAccess(public val value: String) {
     READ_ONLY("read_only"),
@@ -112,6 +118,8 @@ public enum class ProfileFieldAccess(public val value: String) {
 
 /**
  * Where a profile field's value comes from.
+ *
+ * This API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta) and might change before General Availability.
  */
 public enum class ProfileFieldSource(public val value: String) {
     USER("user"),

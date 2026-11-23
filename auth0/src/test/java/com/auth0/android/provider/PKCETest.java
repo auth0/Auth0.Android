@@ -1,5 +1,6 @@
 package com.auth0.android.provider;
 
+import com.auth0.android.NetworkErrorException;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.Callback;
@@ -16,10 +17,16 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.shadows.ShadowLooper;
 
+import java.net.ConnectException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -32,6 +39,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -118,6 +127,123 @@ public class PKCETest {
         verify(tokenRequest).start(callbackCaptor.capture());
         callbackCaptor.getValue().onFailure(new AuthenticationException("Some error", "description"));
         verify(callback).onFailure(any(AuthenticationException.class));
+    }
+
+    @Test
+    public void shouldRetryTokenExchangeWhenHostIsUnreachable() {
+        assertRetriedThenSucceeds(networkError(new UnknownHostException()));
+    }
+
+    @Test
+    public void shouldRetryTokenExchangeWhenConnectionFails() {
+        assertRetriedThenSucceeds(networkError(new ConnectException()));
+    }
+
+    @Test
+    public void shouldRetryTokenExchangeWhenEveryRouteFailedToConnect() {
+        ConnectException error = new ConnectException();
+        error.addSuppressed(new ConnectException());
+        assertRetriedThenSucceeds(networkError(error));
+    }
+
+    @Test
+    public void shouldFailTokenExchangeWhenHostStaysUnreachable() {
+        Request<Credentials, AuthenticationException> tokenRequest = mock(Request.class);
+        when(apiClient.token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI)).thenReturn(tokenRequest);
+        pkce.getToken(AUTHORIZATION_CODE, callback);
+        ArgumentCaptor<Callback> callbackCaptor = ArgumentCaptor.forClass(Callback.class);
+        AuthenticationException error = networkError(new UnknownHostException());
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            verify(tokenRequest, times(attempt)).start(callbackCaptor.capture());
+            callbackCaptor.getValue().onFailure(error);
+            ShadowLooper.idleMainLooper(2, TimeUnit.SECONDS);
+        }
+
+        verify(tokenRequest, times(3)).start(any(Callback.class));
+        verify(callback).onFailure(error);
+    }
+
+    @Test
+    public void shouldNotRetryTokenExchangeWhenRequestTimedOut() {
+        assertNotRetried(networkError(new SocketTimeoutException()));
+    }
+
+    @Test
+    public void shouldNotRetryTokenExchangeWhenConnectionWasReset() {
+        assertNotRetried(networkError(new SocketException("Connection reset")));
+    }
+
+    @Test
+    public void shouldNotRetryTokenExchangeWhenOkHttpAlreadyRetriedASentRequest() {
+        UnknownHostException error = new UnknownHostException();
+        error.addSuppressed(new SocketException("Connection reset"));
+        assertNotRetried(networkError(error));
+    }
+
+    @Test
+    public void shouldNotRetryTokenExchangeOnServerError() {
+        assertNotRetried(new AuthenticationException("invalid_grant", "Invalid authorization code"));
+    }
+
+    @Test
+    public void shouldUseConfiguredTokenExchangeRetries() {
+        pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI, Collections.emptyMap(), 1, 5);
+        Request<Credentials, AuthenticationException> tokenRequest = mock(Request.class);
+        when(apiClient.token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI)).thenReturn(tokenRequest);
+        pkce.getToken(AUTHORIZATION_CODE, callback);
+        ArgumentCaptor<Callback> callbackCaptor = ArgumentCaptor.forClass(Callback.class);
+        AuthenticationException error = networkError(new UnknownHostException());
+
+        verify(tokenRequest).start(callbackCaptor.capture());
+        callbackCaptor.getValue().onFailure(error);
+        ShadowLooper.idleMainLooper(4999, TimeUnit.MILLISECONDS);
+        verify(tokenRequest, times(1)).start(any(Callback.class));
+        ShadowLooper.idleMainLooper(1, TimeUnit.MILLISECONDS);
+        verify(tokenRequest, times(2)).start(callbackCaptor.capture());
+        callbackCaptor.getValue().onFailure(error);
+
+        verify(callback).onFailure(error);
+    }
+
+    @Test
+    public void shouldNotRetryTokenExchangeWhenRetriesAreDisabled() {
+        pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI, Collections.emptyMap(), 0, 1);
+        assertNotRetried(networkError(new UnknownHostException()));
+    }
+
+    private void assertRetriedThenSucceeds(AuthenticationException error) {
+        Request<Credentials, AuthenticationException> tokenRequest = mock(Request.class);
+        when(apiClient.token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI)).thenReturn(tokenRequest);
+        pkce.getToken(AUTHORIZATION_CODE, callback);
+        ArgumentCaptor<Callback> callbackCaptor = ArgumentCaptor.forClass(Callback.class);
+        verify(tokenRequest).start(callbackCaptor.capture());
+
+        callbackCaptor.getValue().onFailure(error);
+        ShadowLooper.idleMainLooper(2, TimeUnit.SECONDS);
+        verify(tokenRequest, times(2)).start(callbackCaptor.capture());
+        Credentials credentials = mock(Credentials.class);
+        callbackCaptor.getValue().onSuccess(credentials);
+
+        verify(callback).onSuccess(credentials);
+        verify(callback, never()).onFailure(any(AuthenticationException.class));
+    }
+
+    private void assertNotRetried(AuthenticationException error) {
+        Request<Credentials, AuthenticationException> tokenRequest = mock(Request.class);
+        when(apiClient.token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI)).thenReturn(tokenRequest);
+        pkce.getToken(AUTHORIZATION_CODE, callback);
+        ArgumentCaptor<Callback> callbackCaptor = ArgumentCaptor.forClass(Callback.class);
+        verify(tokenRequest).start(callbackCaptor.capture());
+
+        callbackCaptor.getValue().onFailure(error);
+        ShadowLooper.idleMainLooper(10, TimeUnit.SECONDS);
+
+        verify(tokenRequest, times(1)).start(any(Callback.class));
+        verify(callback).onFailure(error);
+    }
+
+    private static AuthenticationException networkError(Exception cause) {
+        return new AuthenticationException("Failed to execute the network request", new NetworkErrorException(cause));
     }
 
     @Test

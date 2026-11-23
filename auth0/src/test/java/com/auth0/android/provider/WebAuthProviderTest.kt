@@ -1067,6 +1067,47 @@ public class WebAuthProviderTest {
     }
 
     @Test
+    public fun shouldUseDefaultTokenExchangeRetry() {
+        login(account).start(activity, callback)
+
+        val pkce = restoredManagerState().pkce!!
+        assertThat(pkce.maxNetworkRetries, `is`(2))
+        assertThat(pkce.networkRetryDelaySeconds, `is`(2))
+    }
+
+    @Test
+    public fun shouldKeepCustomTokenExchangeRetryAcrossProcessRestore() {
+        login(account)
+            .withTokenExchangeMaxRetries(4)
+            .withTokenExchangeRetryDelay(3)
+            .start(activity, callback)
+
+        val pkce = restoredManagerState().pkce!!
+        assertThat(pkce.maxNetworkRetries, `is`(4))
+        assertThat(pkce.networkRetryDelaySeconds, `is`(3))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    public fun shouldRejectNegativeTokenExchangeMaxRetries() {
+        login(account).withTokenExchangeMaxRetries(-1)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    public fun shouldRejectTokenExchangeMaxRetriesAboveFour() {
+        login(account).withTokenExchangeMaxRetries(5)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    public fun shouldRejectNegativeTokenExchangeRetryDelay() {
+        login(account).withTokenExchangeRetryDelay(-1)
+    }
+
+    private fun restoredManagerState(): OAuthManagerState {
+        val json = (WebAuthProvider.managerInstance as OAuthManager).toState().serializeToJson()
+        return OAuthManagerState.deserializeState(json)
+    }
+
+    @Test
     public fun shouldStartLoginWithValidRequestCode() {
         val credentials = Mockito.mock(
             Credentials::class.java

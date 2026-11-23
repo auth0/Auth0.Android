@@ -12,6 +12,7 @@ import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
+import com.auth0.android.embedded.passkey.PasskeyAssertion
 import com.auth0.android.request.DefaultClient
 import com.auth0.android.result.Credentials
 import kotlinx.coroutines.Job
@@ -85,7 +86,7 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
      * [NextAction.VerifyPasskey] if the passkey was rejected, or with MFA if the tenant requires it.
      */
     fun verifyPasskey(authenticationResponseJson: String): Unit =
-        runTerminalStep { client.verifyPasskey(authenticationResponseJson).await() }
+        runTerminalStep { client.verifyPasskey(PasskeyAssertion(authenticationResponseJson)).await() }
 
     /** Terminal step: acknowledges the rotated recovery code. */
     fun confirmRecoveryCode(): Unit = runTerminalStep { client.confirmRecoveryCode().await() }
@@ -93,8 +94,11 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
     /** Continuation: the server answers with the identify step for the new user's identifier. */
     fun signup(): Unit = runStep { client.signup().await() }
 
-    /** Terminal step: creates the account and yields credentials, or continues if MFA is required. */
-    fun confirmSignup(): Unit = runTerminalStep { client.confirmSignup().await() }
+    /**
+     * Terminal step: creates the account and yields credentials, or continues if MFA is required or the
+     * password is rejected. Pass the password only when the confirm action offers one.
+     */
+    fun confirmSignup(password: String? = null): Unit = runTerminalStep { client.confirmSignup(password).await() }
 
     /**
      * Polls for push approval. The SDK performs one poll per call, so the app owns the loop: wait the

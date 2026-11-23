@@ -34,6 +34,15 @@ public sealed interface EmbeddedAuthError {
             /** The submitted passkey was rejected. The new [NextAction.VerifyPasskey] carries a fresh challenge. */
             INVALID_PASSKEY,
 
+            /** A password is needed to create the account and none was sent. Retry with one. */
+            PASSWORD_REQUIRED,
+
+            /** A password was sent but the connection doesn't collect one. Retry without it. */
+            PASSWORD_NOT_ACCEPTED,
+
+            /** The connection's password policy rejected the password. Retry with another one. */
+            INVALID_PASSWORD,
+
             /** Authorization is pending (e.g., push notification awaiting user approval). Retry after a delay. */
             AUTHORIZATION_PENDING,
 
@@ -44,6 +53,9 @@ public sealed interface EmbeddedAuthError {
 
     /** Terminal: too many wrong OTP submissions. Restart the flow. */
     public data object TooManyWrongOtpAttempts : EmbeddedAuthError
+
+    /** Terminal: the limit of verification codes sent to this identifier was reached. Restart the flow. */
+    public data object TooManyResendAttempts : EmbeddedAuthError
 
     /** Terminal: the OTP challenge expired before it was verified. Restart the flow. */
     public data object ChallengeExpired : EmbeddedAuthError

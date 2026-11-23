@@ -9,11 +9,11 @@ import com.auth0.android.request.RequestValidator
 /**
  * Runs one non-terminal step of the embedded flow as a single [Request]. These steps never yield
  * credentials, so on the continuation failure the session is rotated (or cleared) via [onStepFailure]
- * before the error is propagated to the caller.
+ * before the error it returns is propagated to the caller.
  */
 internal class StepRequest(
     private val request: Request<Void?, EmbeddedAuthException>,
-    private val onStepFailure: (EmbeddedAuthException) -> Unit
+    private val onStepFailure: (EmbeddedAuthException) -> EmbeddedAuthException
 ) : Request<Void?, EmbeddedAuthException> {
 
     override fun start(callback: Callback<Void?, EmbeddedAuthException>) {
@@ -21,8 +21,7 @@ internal class StepRequest(
             override fun onSuccess(result: Void?) = callback.onSuccess(result)
 
             override fun onFailure(error: EmbeddedAuthException) {
-                onStepFailure(error)
-                callback.onFailure(error)
+                callback.onFailure(onStepFailure(error))
             }
         })
     }
@@ -31,16 +30,14 @@ internal class StepRequest(
     override suspend fun await(): Void? = try {
         request.await()
     } catch (error: EmbeddedAuthException) {
-        onStepFailure(error)
-        throw error
+        throw onStepFailure(error)
     }
 
     @Throws(Auth0Exception::class)
     override fun execute(): Void? = try {
         request.execute()
     } catch (error: EmbeddedAuthException) {
-        onStepFailure(error)
-        throw error
+        throw onStepFailure(error)
     }
 
     override fun addParameters(parameters: Map<String, String>): Request<Void?, EmbeddedAuthException> {
