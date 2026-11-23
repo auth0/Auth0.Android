@@ -32,6 +32,10 @@ private const val IP_BLOCKED = "ip_blocked"
 private const val INVALID_CODE = "invalid_code"
 private const val INVALID_IDENTIFIER_OR_CODE = "invalid_identifier_or_code"
 private const val INVALID_IDENTIFIER_OR_PASSWORD = "invalid_identifier_or_password"
+private const val PASSWORD_REQUIRED = "password_required"
+private const val PASSWORD_NOT_ACCEPTED = "password_not_accepted"
+private const val INVALID_PASSWORD = "invalid_password"
+private const val TOO_MANY_RESEND_ATTEMPTS = "too_many_resend_attempts"
 private const val INVALID_GRANT = "invalid_grant"
 private const val INVALID_REQUEST = "invalid_request"
 private const val TOO_MANY_REQUESTS_STATUS = 429
@@ -92,6 +96,8 @@ internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
                     )
                 code == ACCESS_DENIED && description == TOO_MANY_WRONG_OTP_ATTEMPTS ->
                     EmbeddedAuthError.TooManyWrongOtpAttempts
+                code == ACCESS_DENIED && description == TOO_MANY_RESEND_ATTEMPTS ->
+                    EmbeddedAuthError.TooManyResendAttempts
                 code == ACCESS_DENIED && description == CHALLENGE_EXPIRED ->
                     EmbeddedAuthError.ChallengeExpired
                 code == ACCESS_DENIED && description == AUTHORIZATION_REJECTED ->
@@ -136,6 +142,9 @@ internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
                 EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE
             INVALID_IDENTIFIER_OR_PASSWORD ->
                 EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD
+            PASSWORD_REQUIRED -> EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_REQUIRED
+            PASSWORD_NOT_ACCEPTED -> EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_NOT_ACCEPTED
+            INVALID_PASSWORD -> EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSWORD
             AUTHORIZATION_PENDING ->
                 EmbeddedAuthError.InsufficientAuthorization.Reason.AUTHORIZATION_PENDING
             SLOW_DOWN -> EmbeddedAuthError.InsufficientAuthorization.Reason.SLOW_DOWN

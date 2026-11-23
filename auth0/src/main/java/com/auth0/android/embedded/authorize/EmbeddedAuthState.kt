@@ -1,5 +1,6 @@
 package com.auth0.android.embedded.authorize
 
 internal data class EmbeddedAuthState(
-    val authSession: String
+    val authSession: String,
+    val passwordRequirement: CredentialRequirement? = null
 )
