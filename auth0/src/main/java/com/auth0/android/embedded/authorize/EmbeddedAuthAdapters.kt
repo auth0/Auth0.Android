@@ -55,6 +55,9 @@ internal fun authorizeCodeAdapter(gson: Gson): JsonAdapter<AuthorizeCode> =
 
 /**
  * Translates every embedded-authentication error response into an [EmbeddedAuthException].
+ *
+ * Whole JSON numbers are read as `Long` rather than `Double`, so the server's objects passed on unchanged,
+ * such as [NextAction.VerifyPasskey.requestJson], keep values like `"timeout":900000` instead of `900000.0`.
  */
 internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
     val mapAdapter = forMap(

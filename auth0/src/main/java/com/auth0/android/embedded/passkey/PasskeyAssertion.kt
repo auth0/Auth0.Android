@@ -46,6 +46,10 @@ internal class InvalidPasskeyResponseException(message: String) : IllegalArgumen
  * length limits. `authenticatorAttachment` is kept only when it is a known value;
  * `clientExtensionResults` is forwarded unchanged when it is an object.
  *
+ * The rules mirror the `PasskeyAssertion.json` schema of the embedded authorize API, and must be kept in
+ * line with it. They are checked here because the server answers a request that breaks the schema with a
+ * terminal `invalid_request`, which ends the flow, while a local failure leaves the flow open.
+ *
  * @throws InvalidPasskeyResponseException if the assertion doesn't satisfy the schema.
  */
 internal fun passkeyAuthnResponse(authenticationResponseJson: String): Map<String, Any> {

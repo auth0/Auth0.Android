@@ -41,8 +41,7 @@ val passkey = try {
 } catch (e: EmbeddedAuthException) {
     val nextActions = (e.error as? EmbeddedAuthError.InsufficientAuthorization)?.nextActions ?: throw e
     nextActions.filterIsInstance<NextAction.VerifyPasskey>().firstOrNull()
-}
-// passkey == null: passkeys aren't offered; show the other first factors.
+} ?: return /* passkeys aren't offered; show the other first factors */
 
 // 2. Run the passkey ceremony with the server's options, unchanged.
 val assertionJson = try {

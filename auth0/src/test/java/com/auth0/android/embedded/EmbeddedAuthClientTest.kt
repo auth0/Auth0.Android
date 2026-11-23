@@ -1707,6 +1707,14 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
+    public fun `verifyPasskey await reports no active session before checking the assertion`(): Unit = runTest {
+        val error = assertEmbeddedErrorSuspending { client.verifyPasskey(PasskeyAssertion("""{"id":"a"}""")).await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.NoActiveSession))
+        assertThat(mockAPI.server.requestCount, `is`(0))
+    }
+
+    @Test
     public fun `verifyPasskey await rejects an invalid assertion without sending a request and keeps the session`(): Unit = runTest {
         establishSession()
         val sentBefore = mockAPI.server.requestCount

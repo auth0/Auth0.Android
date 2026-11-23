@@ -168,6 +168,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * without sending a request; the flow is unchanged.
      */
     public fun verifyPasskey(assertion: PasskeyAssertion): Request<Credentials, EmbeddedAuthException> {
+        if (transactionState?.authSession == null) return noActiveSession()
         val authnResponse = try {
             passkeyAuthnResponse(assertion.authenticationResponseJson)
         } catch (e: InvalidPasskeyResponseException) {
