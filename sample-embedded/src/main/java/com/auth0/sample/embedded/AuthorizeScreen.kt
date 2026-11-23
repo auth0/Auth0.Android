@@ -47,7 +47,7 @@ import com.auth0.android.embedded.EmbeddedAuthException
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpChannel
 import com.auth0.android.embedded.authorize.OtpType
-import com.auth0.android.embedded.authorize.PasswordComplexity
+import com.auth0.android.embedded.authorize.SignupPasswordComplexity
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.embedded.authorize.SignupPassword
 import com.auth0.android.embedded.authorize.SignupIdentifier
@@ -450,7 +450,7 @@ private fun ConfirmSignupCard(password: SignupPassword?, onConfirm: (String?) ->
     }
 }
 
-private fun passwordRules(complexity: PasswordComplexity): String = buildString {
+private fun passwordRules(complexity: SignupPasswordComplexity): String = buildString {
     append("At least ${complexity.minLength} characters")
     if (complexity.characterTypes.isNotEmpty()) {
         append(", with ")

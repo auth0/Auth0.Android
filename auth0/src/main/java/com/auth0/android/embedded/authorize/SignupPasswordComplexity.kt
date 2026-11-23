@@ -8,7 +8,7 @@ package com.auth0.android.embedded.authorize
  * rejected with [com.auth0.android.embedded.EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSWORD].
  */
 @ConsistentCopyVisibility
-public data class PasswordComplexity internal constructor(
+public data class SignupPasswordComplexity internal constructor(
     /** The minimum length, in UTF-16 code units. */
     public val minLength: Int,
 

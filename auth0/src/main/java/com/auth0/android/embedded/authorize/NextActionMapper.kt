@@ -130,17 +130,17 @@ private fun Map<String, Any>.toSignupPassword(): SignupPassword? {
         ?.mapNotNull(::passwordCharacterType)
         ?.distinct()
         .orEmpty()
-    return SignupPassword(required = false, complexity = PasswordComplexity(minLength, characterTypes))
+    return SignupPassword(required = false, complexity = SignupPasswordComplexity(minLength, characterTypes))
 }
 
 private fun Number.toWholeInt(): Int? =
     toDouble().takeIf { it % 1.0 == 0.0 && it in Int.MIN_VALUE.toDouble()..Int.MAX_VALUE.toDouble() }?.toInt()
 
-private fun passwordCharacterType(value: String): PasswordComplexity.CharacterType? = when (value) {
-    "lowercase" -> PasswordComplexity.CharacterType.LOWERCASE
-    "uppercase" -> PasswordComplexity.CharacterType.UPPERCASE
-    "number" -> PasswordComplexity.CharacterType.NUMBER
-    "special" -> PasswordComplexity.CharacterType.SPECIAL
+private fun passwordCharacterType(value: String): SignupPasswordComplexity.CharacterType? = when (value) {
+    "lowercase" -> SignupPasswordComplexity.CharacterType.LOWERCASE
+    "uppercase" -> SignupPasswordComplexity.CharacterType.UPPERCASE
+    "number" -> SignupPasswordComplexity.CharacterType.NUMBER
+    "special" -> SignupPasswordComplexity.CharacterType.SPECIAL
     else -> null
 }
 

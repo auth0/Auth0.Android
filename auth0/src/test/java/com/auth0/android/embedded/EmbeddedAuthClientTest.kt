@@ -8,7 +8,7 @@ import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpChannel
 import com.auth0.android.embedded.authorize.OtpType
-import com.auth0.android.embedded.authorize.PasswordComplexity
+import com.auth0.android.embedded.authorize.SignupPasswordComplexity
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.embedded.authorize.SignupIdentifier
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
@@ -1675,7 +1675,7 @@ public class EmbeddedAuthClientTest {
         assertThat(password.complexity.minLength, `is`(8))
         assertThat(
             password.complexity.characterTypes,
-            `is`(listOf(PasswordComplexity.CharacterType.LOWERCASE, PasswordComplexity.CharacterType.NUMBER))
+            `is`(listOf(SignupPasswordComplexity.CharacterType.LOWERCASE, SignupPasswordComplexity.CharacterType.NUMBER))
         )
     }
 

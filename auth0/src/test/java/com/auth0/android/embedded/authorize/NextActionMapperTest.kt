@@ -228,10 +228,10 @@ public class NextActionMapperTest {
             password.complexity.characterTypes,
             `is`(
                 listOf(
-                    PasswordComplexity.CharacterType.LOWERCASE,
-                    PasswordComplexity.CharacterType.UPPERCASE,
-                    PasswordComplexity.CharacterType.NUMBER,
-                    PasswordComplexity.CharacterType.SPECIAL
+                    SignupPasswordComplexity.CharacterType.LOWERCASE,
+                    SignupPasswordComplexity.CharacterType.UPPERCASE,
+                    SignupPasswordComplexity.CharacterType.NUMBER,
+                    SignupPasswordComplexity.CharacterType.SPECIAL
                 )
             )
         )
@@ -264,7 +264,7 @@ public class NextActionMapperTest {
 
         assertThat(
             action.password!!.complexity.characterTypes,
-            `is`(listOf(PasswordComplexity.CharacterType.NUMBER, PasswordComplexity.CharacterType.SPECIAL))
+            `is`(listOf(SignupPasswordComplexity.CharacterType.NUMBER, SignupPasswordComplexity.CharacterType.SPECIAL))
         )
     }
 

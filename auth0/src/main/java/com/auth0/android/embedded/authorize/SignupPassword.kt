@@ -13,5 +13,5 @@ public data class SignupPassword internal constructor(
     public val required: Boolean,
 
     /** The advisory rules for the password. */
-    public val complexity: PasswordComplexity
+    public val complexity: SignupPasswordComplexity
 )
