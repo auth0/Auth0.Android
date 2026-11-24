@@ -12,6 +12,8 @@ import com.auth0.android.embedded.authorize.SignupPasswordComplexity
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.embedded.authorize.SignupIdentifier
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
+import com.auth0.android.embedded.passkey.PasskeyAssertion
+import com.auth0.android.embedded.passkey.UserVerification
 import com.auth0.android.util.EmbeddedAuthMockServer
 import com.auth0.android.util.SSLTestUtils.testClient
 import kotlinx.coroutines.test.runTest
@@ -31,6 +33,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.StringReader
+import org.hamcrest.Matchers.containsString
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
@@ -122,7 +125,8 @@ public class EmbeddedAuthClientTest {
                     "action:verify:recovery-code:v1",
                     "action:confirm:recovery-code:v1",
                     "action:signup:v1",
-                    "action:signup:confirm:v1"
+                    "action:signup:confirm:v1",
+                    "action:verify:passkey:v1"
                 )
             )
         )
@@ -1821,6 +1825,116 @@ public class EmbeddedAuthClientTest {
         assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
+    // ── verifyPasskey ────────────────────────────────────────────────────────────
+
+    @Test
+    public fun `authorize surfaces the passkey offer next to the other first factors`(): Unit = runTest {
+        mockAPI.willReturnContinuationWith(
+            EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL,
+            EmbeddedAuthMockServer.NEXT_VERIFY_PASSKEY
+        )
+
+        val error = assertEmbeddedErrorSuspending {
+            client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await()
+        }
+
+        val offer = error.nextActions[1] as NextAction.VerifyPasskey
+        assertThat(error.nextActions[0], `is`(NextAction.IdentifyEmail as NextAction))
+        assertThat(offer.options.challenge, `is`("Y2hhbGxlbmdl"))
+        assertThat(offer.options.timeout, `is`(900000L))
+        assertThat(offer.options.rpId, `is`("login.example.com"))
+        assertThat(offer.options.userVerification, `is`(UserVerification.PREFERRED))
+        val requestJson = JSONObject(offer.requestJson)
+        assertThat(requestJson.getString("challenge"), `is`("Y2hhbGxlbmdl"))
+        assertThat(offer.requestJson, containsString("\"timeout\":900000"))
+        assertThat(offer.requestJson, not(containsString("900000.0")))
+    }
+
+    @Test
+    public fun `verifyPasskey await POSTs exactly the schema fields and returns credentials`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        val credentials = client.verifyPasskey(PasskeyAssertion(passkeyAssertion())).await()
+
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        val authorize = mockAPI.takeRequest()
+        assertThat(authorize.requestUrl?.encodedPath, `is`("/e/authorize"))
+        val body = bodyOf(authorize)
+        assertThat(body.keys().asSequence().toSet(), `is`(setOf("auth_session", "action", "client_id", "authn_response")))
+        assertThat(body.getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+        assertThat(body.getString("action"), `is`("action:verify:passkey:v1"))
+        assertThat(body.getString("client_id"), `is`(CLIENT_ID))
+        val response = body.getJSONObject("authn_response")
+        assertThat(
+            response.keys().asSequence().toSet(),
+            `is`(setOf("id", "rawId", "type", "response", "authenticatorAttachment", "clientExtensionResults"))
+        )
+        assertThat(response.getString("id"), `is`("credential-id"))
+        assertThat(response.getString("type"), `is`("public-key"))
+        assertThat(response.getString("authenticatorAttachment"), `is`("platform"))
+        assertThat(response.getJSONObject("clientExtensionResults").getJSONObject("credProps").getBoolean("rk"), `is`(true))
+        val inner = response.getJSONObject("response")
+        assertThat(
+            inner.keys().asSequence().toSet(),
+            `is`(setOf("clientDataJSON", "authenticatorData", "signature", "userHandle"))
+        )
+        assertThat(inner.getString("userHandle"), `is`("user-handle"))
+        assertThat(mockAPI.takeRequest().requestUrl?.encodedPath, `is`("/oauth/token"))
+
+        val followOn = assertEmbeddedErrorSuspending { client.verifyPasskey(PasskeyAssertion(passkeyAssertion())).await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `verifyPasskey await reports no active session before checking the assertion`(): Unit = runTest {
+        val error = assertEmbeddedErrorSuspending { client.verifyPasskey(PasskeyAssertion("""{"id":"a"}""")).await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.NoActiveSession))
+        assertThat(mockAPI.server.requestCount, `is`(0))
+    }
+
+    @Test
+    public fun `verifyPasskey await rejects an invalid assertion without sending a request and keeps the session`(): Unit = runTest {
+        establishSession()
+        val sentBefore = mockAPI.server.requestCount
+
+        val error = assertEmbeddedErrorSuspending { client.verifyPasskey(PasskeyAssertion("""{"id":"a"}""")).await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.InvalidInput))
+        assertThat(error.code, `is`("invalid_input"))
+        assertThat(error.statusCode, `is`(0))
+        assertThat(mockAPI.server.requestCount, `is`(sentBefore))
+
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        client.verifyPasskey(PasskeyAssertion(passkeyAssertion())).await()
+
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+    }
+
+    @Test
+    public fun `verifyPasskey await surfaces invalid_passkey with a fresh offer and rotates the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnInvalidPasskey()
+
+        val error = assertEmbeddedErrorSuspending { client.verifyPasskey(PasskeyAssertion(passkeyAssertion())).await() }
+        mockAPI.takeRequest()
+
+        val pending = error.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(pending.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSKEY))
+        val offer = pending.nextActions[0] as NextAction.VerifyPasskey
+        assertThat(offer.options.challenge, `is`("ZnJlc2g"))
+
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        val credentials = client.verifyPasskey(PasskeyAssertion(passkeyAssertion())).await()
+
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION))
+    }
+
     // ── Session preservation on MFA errors ───────────────────────────────────────
 
     @Test
@@ -1948,6 +2062,23 @@ public class EmbeddedAuthClientTest {
         try { block() } catch (ex: EmbeddedAuthException) { error = ex }
         assertThat("expected EmbeddedAuthException", error, `is`(notNullValue()))
         return error!!
+    }
+
+    private fun passkeyAssertion(
+        attachment: String? = "platform",
+        extensions: String? = """{"credProps":{"rk":true}}""",
+        userHandle: String? = "user-handle",
+        extraTop: String = "",
+        extraResponse: String = ""
+    ): String = buildString {
+        append("""{"id":"credential-id","rawId":"credential-raw-id","type":"public-key"""")
+        attachment?.let { append(""","authenticatorAttachment":"$it"""") }
+        extensions?.let { append(""","clientExtensionResults":$it""") }
+        append(extraTop)
+        append(""","response":{"clientDataJSON":"client-data","authenticatorData":"authenticator-data","signature":"the-signature"""")
+        userHandle?.let { append(""","userHandle":"$it"""") }
+        append(extraResponse)
+        append("}}")
     }
 
     private fun bodyOf(request: RecordedRequest): JSONObject =

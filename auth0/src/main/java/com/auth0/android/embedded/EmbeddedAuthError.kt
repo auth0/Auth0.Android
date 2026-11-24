@@ -31,6 +31,9 @@ public sealed interface EmbeddedAuthError {
             /** The username or the password was invalid; the server does not say which. */
             INVALID_IDENTIFIER_OR_PASSWORD,
 
+            /** The submitted passkey was rejected. The new [NextAction.VerifyPasskey] carries a fresh challenge. */
+            INVALID_PASSKEY,
+
             /** A password is needed to create the account and none was sent. Retry with one. */
             PASSWORD_REQUIRED,
 
@@ -108,6 +111,12 @@ public sealed interface EmbeddedAuthError {
      * [EmbeddedAuthClient.authorize].
      */
     public data object Network : EmbeddedAuthError
+
+    /**
+     * Client-side guard: the input was rejected before any request was sent, so the flow is unchanged.
+     * Read [EmbeddedAuthException.description] for which field was rejected, and retry the step.
+     */
+    public data object InvalidInput : EmbeddedAuthError
 
     /** Client-side guard: no flow is in progress. Call [EmbeddedAuthClient.authorize] first. */
     public data object NoActiveSession : EmbeddedAuthError

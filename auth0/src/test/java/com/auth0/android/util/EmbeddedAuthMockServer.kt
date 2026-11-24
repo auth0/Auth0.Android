@@ -84,6 +84,17 @@ $actionsJson
         return this
     }
 
+    /** The recoverable `403` after a rejected passkey: rotated session and a fresh passkey offer. */
+    fun willReturnInvalidPasskey(): EmbeddedAuthMockServer {
+        server.enqueue(
+            responseWithJSON(
+                """{ "error": "insufficient_authorization", "error_description": "invalid_passkey", "auth_session": "$ROTATED_AUTH_SESSION", "next": [ $NEXT_VERIFY_PASSKEY_FRESH ] }""",
+                403
+            )
+        )
+        return this
+    }
+
     /** The recoverable `403` for a signup password problem: rotated session and the confirm action again. */
     fun willReturnSignupPasswordError(description: String, confirm: String = NEXT_CONFIRM_SIGNUP_PASSWORD): EmbeddedAuthMockServer {
         server.enqueue(
@@ -226,6 +237,8 @@ $actionsJson
         const val NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true } }, "authentication_methods": { "password": { "required": false } } }"""
         const val NEXT_CONFIRM_SIGNUP_PASSWORD = """{ "action": "action:signup:confirm:v1", "password_complexity_options": { "min_length": 8, "character_types": ["lowercase", "number"] } }"""
         const val NEXT_CONFIRM_SIGNUP = """{ "action": "action:signup:confirm:v1" }"""
+        const val NEXT_VERIFY_PASSKEY = """{ "action": "action:verify:passkey:v1", "authn_params_public_key": { "challenge": "Y2hhbGxlbmdl", "timeout": 900000, "userVerification": "preferred", "rpId": "login.example.com" } }"""
+        const val NEXT_VERIFY_PASSKEY_FRESH = """{ "action": "action:verify:passkey:v1", "authn_params_public_key": { "challenge": "ZnJlc2g", "timeout": 900000, "userVerification": "preferred", "rpId": "login.example.com" } }"""
         const val NEXT_UNKNOWN = """{ "action": "action:future:unknown:v1" }"""
         const val IDENTIFIER = "jane@example.com"
         const val AUTHORIZATION_CODE = "the-authorization-code"
