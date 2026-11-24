@@ -1,5 +1,12 @@
 # Change Log
 
+## [5.0.0-beta.4](https://github.com/auth0/Auth0.Android/tree/5.0.0-beta.4) (2026-11-24)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/5.0.0-beta.3...5.0.0-beta.4)
+
+**Added**
+- feat(Embedded): Add passkey login support to embedded API [\#1132](https://github.com/auth0/Auth0.Android/pull/1132) ([pmathew92](https://github.com/pmathew92))
+- feat(embedded): add password support to the signup flow [\#1139](https://github.com/auth0/Auth0.Android/pull/1139) ([pmathew92](https://github.com/pmathew92))
+
 ## [5.0.0-beta.3](https://github.com/auth0/Auth0.Android/tree/5.0.0-beta.3) (2026-11-11)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/5.0.0-beta.2...5.0.0-beta.3)
 
