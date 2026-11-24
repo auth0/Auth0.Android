@@ -8,13 +8,10 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import java.security.PublicKey
-import java.text.SimpleDateFormat
 import java.util.*
 
 internal object GsonProvider {
     internal val gson: Gson
-    private var sdf: SimpleDateFormat
-    private const val DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
 
     init {
         val jwksType = TypeToken.getParameterized(
@@ -28,14 +25,13 @@ internal object GsonProvider {
             .registerTypeAdapter(Credentials::class.java, CredentialsDeserializer())
             .registerTypeAdapter(SSOCredentials::class.java, SSOCredentialsDeserializer())
             .registerTypeAdapter(jwksType, JwksDeserializer())
-            .setDateFormat(DATE_FORMAT)
+            .registerTypeAdapter(Date::class.java, DateTypeAdapter())
             .create()
-        sdf = SimpleDateFormat(DATE_FORMAT, Locale.US)
     }
 
     @JvmStatic
     @VisibleForTesting
     fun formatDate(date: Date): String {
-        return sdf.format(date)
+        return DateTypeAdapter.format(date)
     }
 }
