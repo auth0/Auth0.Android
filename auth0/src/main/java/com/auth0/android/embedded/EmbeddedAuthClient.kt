@@ -4,6 +4,7 @@ import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.embedded.authorize.AdvancingRequest
 import com.auth0.android.embedded.authorize.AuthorizeCode
+import com.auth0.android.embedded.authorize.CredentialRequirement
 import com.auth0.android.embedded.authorize.EmbeddedAuthState
 import com.auth0.android.embedded.authorize.EmbeddedCapability
 import com.auth0.android.embedded.authorize.FailedRequest
@@ -11,9 +12,13 @@ import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
+import com.auth0.android.embedded.authorize.SignupPassword
 import com.auth0.android.embedded.authorize.StepRequest
 import com.auth0.android.embedded.authorize.authorizeCodeAdapter
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
+import com.auth0.android.embedded.passkey.InvalidPasskeyResponseException
+import com.auth0.android.embedded.passkey.PasskeyAssertion
+import com.auth0.android.embedded.passkey.passkeyAuthnResponse
 import com.auth0.android.request.Request
 import com.auth0.android.request.internal.GsonAdapter
 import com.auth0.android.request.internal.GsonProvider
@@ -68,7 +73,8 @@ public class EmbeddedAuthClient private constructor(
      * @param scope space-separated scopes to request. Must include `openid` for the terminal token
      * exchange to return an ID token; defaults to `"openid profile email offline_access"`.
      * @param audience optional API audience to request an access token for.
-     * @param capabilities the set of steps this client can handle in the flow.
+     * @param capabilities the set of steps this client can handle in the flow. Defaults to every step the
+     * SDK models.
      */
     @JvmOverloads
     public fun authorize(
@@ -169,6 +175,40 @@ public class EmbeddedAuthClient private constructor(
         terminalStep(EmbeddedCapability.VERIFY_PASSWORD) {
             addParameter(PASSWORD_KEY, password)
         }
+
+    /**
+     * Signs the user in with a passkey. Completes the flow when no further factor is required.
+     *
+     * Call it with a [PasskeyAssertion] holding the `authenticationResponseJson` of the credential the
+     * platform returned after running the ceremony for [NextAction.VerifyPasskey.requestJson]. Only the
+     * fields the server accepts are sent. The passkey must be discoverable, so the response must carry a
+     * `userHandle`.
+     *
+     * On success, it yields the [Credentials]. If the passkey is rejected, the request completes through
+     * [EmbeddedAuthException] with [EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSKEY]
+     * and a new [NextAction.VerifyPasskey] that carries a fresh challenge. If the server requires further
+     * steps, [EmbeddedAuthError.InsufficientAuthorization.nextActions] carry them.
+     *
+     * A response that doesn't match the server's schema completes with [EmbeddedAuthError.InvalidInput]
+     * without sending a request; the flow is unchanged.
+     */
+    public fun verifyPasskey(assertion: PasskeyAssertion): Request<Credentials, EmbeddedAuthException> {
+        if (transactionState?.authSession == null) return noActiveSession()
+        val authnResponse = try {
+            passkeyAuthnResponse(assertion.authenticationResponseJson)
+        } catch (e: InvalidPasskeyResponseException) {
+            return FailedRequest(
+                EmbeddedAuthException(
+                    INVALID_INPUT_ERROR,
+                    e.message ?: DEFAULT_INVALID_INPUT_DESCRIPTION,
+                    error = EmbeddedAuthError.InvalidInput
+                )
+            )
+        }
+        return terminalStep(EmbeddedCapability.VERIFY_PASSKEY) {
+            addParameter(AUTHN_RESPONSE_KEY, authnResponse)
+        }
+    }
 
     /**
      * Continues the flow by requesting a phone challenge for the authenticator at [index].
@@ -276,14 +316,31 @@ public class EmbeddedAuthClient private constructor(
      * Creates the new user's account and completes the flow. Call it when a
      * [NextAction.ConfirmSignup] is offered.
      *
+     * Pass a [password] when [NextAction.ConfirmSignup.password] is not `null`; it must be passed when
+     * [SignupPassword.required] is `true`. An empty [password] counts as none. It is sent as it is, and the
+     * SDK doesn't check it against [SignupPassword.complexity], which is advisory, or against the server's limit of
+     * 2048 characters. A longer password is rejected with the terminal [EmbeddedAuthError.InvalidRequest].
+     *
      * On success, it yields the [Credentials]. If the server requires further steps the request
      * completes through [EmbeddedAuthException] instead, with
      * [EmbeddedAuthError.InsufficientAuthorization.nextActions] on [EmbeddedAuthException.error].
+     *
+     * The server decides whether the passed password is right or not. A missing
+     * required password completes with [EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_REQUIRED],
+     * a password the connection doesn't collect with
+     * [EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_NOT_ACCEPTED], and a password the
+     * connection's policy rejects with [EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSWORD].
+     * Each keeps the flow open, so call again with the right input.
      * If the account can't be created, the request completes with the terminal
      * [EmbeddedAuthError.InvalidRequest]; start a new flow with [authorize].
      */
-    public fun confirmSignup(): Request<Credentials, EmbeddedAuthException> =
-        terminalStep(EmbeddedCapability.CONFIRM_SIGNUP)
+    @JvmOverloads
+    public fun confirmSignup(password: String? = null): Request<Credentials, EmbeddedAuthException> {
+        val sentPassword = password?.takeIf { it.isNotEmpty() }
+        return terminalStep(EmbeddedCapability.CONFIRM_SIGNUP) {
+            if (sentPassword != null) addParameter(PASSWORD_KEY, sentPassword)
+        }
+    }
 
     private fun continueStep(
         action: EmbeddedCapability,
@@ -330,7 +387,7 @@ public class EmbeddedAuthClient private constructor(
 
     private fun stepping(
         request: Request<Void?, EmbeddedAuthException>,
-        onStepFailure: (EmbeddedAuthException) -> Unit = { error -> updateSessionFromFailure(error) }
+        onStepFailure: (EmbeddedAuthException) -> EmbeddedAuthException = { error -> updateSessionFromFailure(error) }
     ): Request<Void?, EmbeddedAuthException> = StepRequest(request, onStepFailure)
 
     /**
@@ -372,20 +429,52 @@ public class EmbeddedAuthClient private constructor(
             .toString()
     }
 
-    private fun updateSessionFromFailure(error: EmbeddedAuthException, authorizeVerifier: String? = null) {
-        if (error.statusCode in 500..599) return
+    private fun updateSessionFromFailure(
+        error: EmbeddedAuthException,
+        authorizeVerifier: String? = null
+    ): EmbeddedAuthException {
+        if (error.statusCode in 500..599) return error
 
-        when (error.error) {
-            is EmbeddedAuthError.InsufficientAuthorization ->
-                error.authSession?.let { session ->
-                    transactionState = authorizeVerifier?.let { EmbeddedAuthState(it, session) }
-                        ?: transactionState?.copy(authSession = session)
+        return when (val failure = error.error) {
+            is EmbeddedAuthError.InsufficientAuthorization -> {
+                val session = error.authSession ?: return error
+                val announced = failure.nextActions.filterIsInstance<NextAction.Signup>().firstOrNull()?.passwordRequirement
+                val requirement = when {
+                    failure.reason == EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_REQUIRED ->
+                        CredentialRequirement.REQUIRED
+
+                    else -> announced ?: transactionState?.passwordRequirement
                 }
+                val actions = failure.nextActions.map { action ->
+                    if (action is NextAction.ConfirmSignup) action.withRequired(requirement == CredentialRequirement.REQUIRED) else action
+                }
+                transactionState = authorizeVerifier?.let { EmbeddedAuthState(it, session, requirement) }
+                    ?: transactionState?.copy(authSession = session, passwordRequirement = requirement)
+                if (actions == failure.nextActions) error else error.withNextActions(actions, failure.reason)
+            }
 
-            is EmbeddedAuthError.Network -> Unit
-            else -> transactionState = null
+            is EmbeddedAuthError.Network -> error
+            else -> {
+                transactionState = null
+                error
+            }
         }
     }
+
+    private fun NextAction.ConfirmSignup.withRequired(required: Boolean): NextAction.ConfirmSignup =
+        NextAction.ConfirmSignup(password?.let { SignupPassword(required, it.complexity) })
+
+    private fun EmbeddedAuthException.withNextActions(
+        nextActions: List<NextAction>,
+        reason: EmbeddedAuthError.InsufficientAuthorization.Reason
+    ): EmbeddedAuthException = EmbeddedAuthException(
+        code,
+        description,
+        statusCode,
+        error = EmbeddedAuthError.InsufficientAuthorization(nextActions, reason),
+        authSession = authSession,
+        cause = cause
+    )
 
     internal companion object {
         @JvmSynthetic
@@ -408,6 +497,7 @@ public class EmbeddedAuthClient private constructor(
         private const val PHONE_KEY = "phone"
         private const val USERNAME_KEY = "username"
         private const val PASSWORD_KEY = "password"
+        private const val AUTHN_RESPONSE_KEY = "authn_response"
         private const val DELIVERY_METHOD_KEY = "delivery_method"
         private const val OTP_KEY = "otp"
         private const val INDEX_KEY = "index"
@@ -420,6 +510,8 @@ public class EmbeddedAuthClient private constructor(
         private const val CODE_VERIFIER_KEY = "code_verifier"
         private const val GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code"
         private const val NO_ACTIVE_SESSION_ERROR = "no_active_session"
+        private const val INVALID_INPUT_ERROR = "invalid_input"
+        private const val DEFAULT_INVALID_INPUT_DESCRIPTION = "The input was rejected."
 
         private const val DEFAULT_SCOPE = "openid profile email offline_access"
 
@@ -436,7 +528,8 @@ public class EmbeddedAuthClient private constructor(
             EmbeddedCapability.VERIFY_RECOVERY_CODE,
             EmbeddedCapability.CONFIRM_RECOVERY_CODE,
             EmbeddedCapability.SIGNUP,
-            EmbeddedCapability.CONFIRM_SIGNUP
+            EmbeddedCapability.CONFIRM_SIGNUP,
+            EmbeddedCapability.VERIFY_PASSKEY
         )
     }
 

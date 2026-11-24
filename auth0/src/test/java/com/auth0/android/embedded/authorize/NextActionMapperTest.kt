@@ -1,9 +1,16 @@
 package com.auth0.android.embedded.authorize
 
+import com.auth0.android.embedded.passkey.UserVerification
+import com.google.gson.GsonBuilder
+import com.google.gson.ToNumberPolicy
+import com.google.gson.reflect.TypeToken
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.instanceOf
+import org.hamcrest.Matchers.nullValue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -178,5 +185,272 @@ public class NextActionMapperTest {
         assertThat(action, instanceOf(NextAction.ConfirmRecoveryCode::class.java))
         action as NextAction.ConfirmRecoveryCode
         assertThat(action.newCode, `is`("NEW-CODE-123"))
+    }
+
+    @Test
+    public fun testVerifyPasskeyMapped() {
+        val action = passkeyOffer(
+            """{"challenge":"Y2hhbGxlbmdl","timeout":900000,"userVerification":"required","rpId":"login.example.com","hints":["client-device","hybrid"],"allowCredentials":[{"type":"public-key","id":"abc","transports":["internal"]},{"type":"public-key","id":"def"}]}"""
+        ).toNextActions().first()
+
+        assertThat(action, instanceOf(NextAction.VerifyPasskey::class.java))
+        action as NextAction.VerifyPasskey
+        assertThat(action.capability, `is`(EmbeddedCapability.VERIFY_PASSKEY))
+        assertThat(action.options.challenge, `is`("Y2hhbGxlbmdl"))
+        assertThat(action.options.timeout, `is`(900000L))
+        assertThat(action.options.rpId, `is`("login.example.com"))
+        assertThat(action.options.userVerification, `is`(UserVerification.REQUIRED))
+        assertThat(action.options.hints, `is`(listOf("client-device", "hybrid")))
+        assertThat(
+            action.options.allowCredentials,
+            `is`(
+                listOf(
+                    mapOf("type" to "public-key", "id" to "abc", "transports" to listOf("internal")),
+                    mapOf("type" to "public-key", "id" to "def")
+                )
+            )
+        )
+    }
+
+    @Test
+    public fun testVerifyPasskeyMapsEachUserVerificationValue() {
+        val expected = mapOf(
+            "required" to UserVerification.REQUIRED,
+            "preferred" to UserVerification.PREFERRED,
+            "discouraged" to UserVerification.DISCOURAGED
+        )
+        for ((value, verification) in expected) {
+            val action = passkeyOffer(
+                """{"challenge":"c","timeout":1,"userVerification":"$value","rpId":"r"}"""
+            ).toNextActions().first() as NextAction.VerifyPasskey
+            assertThat(action.options.userVerification, `is`(verification))
+        }
+    }
+
+    @Test
+    public fun testVerifyPasskeyHintsAndAllowCredentialsDefaultToEmpty() {
+        val action = passkeyOffer(
+            """{"challenge":"c","timeout":1,"userVerification":"preferred","rpId":"r"}"""
+        ).toNextActions().first() as NextAction.VerifyPasskey
+
+        assertThat(action.options.hints, `is`(emptyList()))
+        assertThat(action.options.allowCredentials, `is`(emptyList()))
+    }
+
+    @Test
+    public fun testVerifyPasskeyRequestJsonKeepsEveryServerFieldAndIntegers() {
+        val action = passkeyOffer(
+            """{"challenge":"c","timeout":900000,"userVerification":"preferred","rpId":"r","hints":["hybrid"],"allowCredentials":[{"type":"public-key","id":"abc","transports":["internal"]}],"extensions":{"credProps":true,"count":3,"ratio":1.5}}"""
+        ).toNextActions().first() as NextAction.VerifyPasskey
+
+        assertThat(
+            action.requestJson,
+            `is`(
+                """{"challenge":"c","timeout":900000,"userVerification":"preferred","rpId":"r","hints":["hybrid"],"allowCredentials":[{"type":"public-key","id":"abc","transports":["internal"]}],"extensions":{"credProps":true,"count":3,"ratio":1.5}}"""
+            )
+        )
+        assertThat(action.requestJson, not(containsString("900000.0")))
+    }
+
+    @Test
+    public fun testVerifyPasskeyDroppedWithoutAuthnParams() {
+        assertThat(listOf(mapOf(ACTION_KEY to "action:verify:passkey:v1")).toNextActions().isEmpty(), `is`(true))
+        assertThat(
+            listOf(mapOf(ACTION_KEY to "action:verify:passkey:v1", "authn_params_public_key" to "text")).toNextActions().isEmpty(),
+            `is`(true)
+        )
+    }
+
+    @Test
+    public fun testVerifyPasskeyAcceptsAWholeTimeoutOfAnyNumberType() {
+        for (timeout in listOf<Number>(900000, 900000L, 900000.0)) {
+            val offer = mapOf(
+                ACTION_KEY to "action:verify:passkey:v1",
+                "authn_params_public_key" to mapOf(
+                    "challenge" to "c",
+                    "timeout" to timeout,
+                    "userVerification" to "preferred",
+                    "rpId" to "r"
+                )
+            )
+            val action = listOf(offer).toNextActions().first() as NextAction.VerifyPasskey
+
+            assertThat("timeout=$timeout", action.options.timeout, `is`(900000L))
+        }
+    }
+
+    @Test
+    public fun testVerifyPasskeyDroppedWhenARequiredFieldIsMissing() {
+        val offer = passkeyOffer("""{"challenge":"c","timeout":1,"userVerification":"preferred","rpId":"r"}""").first()
+        @Suppress("UNCHECKED_CAST")
+        val params = offer["authn_params_public_key"] as Map<String, Any>
+
+        assertThat(listOf(offer).toNextActions().first(), instanceOf(NextAction.VerifyPasskey::class.java))
+        for (field in params.keys) {
+            val incomplete = offer + ("authn_params_public_key" to (params - field))
+            assertThat("without $field", listOf(incomplete).toNextActions().isEmpty(), `is`(true))
+        }
+    }
+
+    @Test
+    public fun testVerifyPasskeyDroppedWhenAFieldHasTheWrongType() {
+        val invalid = listOf(
+            """{"challenge":1,"timeout":1,"userVerification":"preferred","rpId":"r"}""",
+            """{"challenge":"c","timeout":"900000","userVerification":"preferred","rpId":"r"}""",
+            """{"challenge":"c","timeout":1.5,"userVerification":"preferred","rpId":"r"}""",
+            """{"challenge":"c","timeout":1,"userVerification":"preferred","rpId":2}""",
+            """{"challenge":"c","timeout":1,"userVerification":"always","rpId":"r"}""",
+            """{"challenge":"c","timeout":1,"userVerification":1,"rpId":"r"}"""
+        )
+        for (params in invalid) {
+            assertThat(params, passkeyOffer(params).toNextActions().isEmpty(), `is`(true))
+        }
+    }
+
+    @Test
+    public fun testVerifyPasskeyKeepsTheOfferWhenOptionalFieldsHaveTheWrongType() {
+        val action = passkeyOffer(
+            """{"challenge":"c","timeout":1,"userVerification":"preferred","rpId":"r","hints":"hybrid","allowCredentials":"abc"}"""
+        ).toNextActions().first() as NextAction.VerifyPasskey
+
+        assertThat(action.options.hints, `is`(emptyList()))
+        assertThat(action.options.allowCredentials, `is`(emptyList()))
+    }
+
+    @Test
+    public fun testVerifyPasskeySkipsInvalidEntriesInTheOptionalLists() {
+        val action = passkeyOffer(
+            """{"challenge":"c","timeout":1,"userVerification":"preferred","rpId":"r","hints":["hybrid",1,null,"client-device"],"allowCredentials":[{"id":"x"},"text",5,null,{"id":"y","extra":null}]}"""
+        ).toNextActions().first() as NextAction.VerifyPasskey
+
+        assertThat(action.options.hints, `is`(listOf("hybrid", "client-device")))
+        assertThat(action.options.allowCredentials, `is`(listOf(mapOf("id" to "x"), mapOf("id" to "y"))))
+    }
+
+    @Test
+    public fun testVerifyPasskeyKeepsTheOfferAndPassesOnFieldsItDoesNotModel() {
+        val action = passkeyOffer(
+            """{"challenge":"c","timeout":1,"userVerification":"preferred","rpId":"r","futureField":"value"}"""
+        ).toNextActions().first() as NextAction.VerifyPasskey
+
+        assertThat(action.requestJson, containsString("\"futureField\":\"value\""))
+    }
+
+    @Test
+    public fun testVerifyPasskeyToStringHidesTheChallenge() {
+        val action = passkeyOffer(
+            """{"challenge":"SECRET-CHALLENGE","timeout":1,"userVerification":"preferred","rpId":"r"}"""
+        ).toNextActions().first() as NextAction.VerifyPasskey
+
+        assertThat(action.options.toString(), not(containsString("SECRET-CHALLENGE")))
+        assertThat(action.toString(), not(containsString("SECRET-CHALLENGE")))
+    }
+
+    @Test
+    public fun testSignupPasswordRequirementMapped() {
+        val identifiers = mapOf("email" to mapOf("required" to true))
+        val cases: List<Pair<Map<String, Any>?, CredentialRequirement>> = listOf(
+            mapOf("password" to mapOf("required" to true)) to CredentialRequirement.REQUIRED,
+            mapOf("password" to mapOf("required" to false)) to CredentialRequirement.OPTIONAL,
+            mapOf("password" to mapOf<String, Any>()) to CredentialRequirement.NONE,
+            mapOf("password" to mapOf("required" to "yes")) to CredentialRequirement.NONE,
+            mapOf<String, Any>() to CredentialRequirement.NONE,
+            null to CredentialRequirement.NONE
+        )
+        for ((methods, expected) in cases) {
+            val raw = buildMap<String, Any> {
+                put(ACTION_KEY, "action:signup:v1")
+                put("identifiers", identifiers)
+                if (methods != null) put("authentication_methods", methods)
+            }
+            val action = listOf(raw).toNextActions().first() as NextAction.Signup
+            assertThat("authentication_methods=$methods", action.passwordRequirement, `is`(expected))
+        }
+    }
+
+    @Test
+    public fun testConfirmSignupWithoutPasswordOptionsHasNoPassword() {
+        val action = listOf(mapOf(ACTION_KEY to "action:signup:confirm:v1")).toNextActions().first()
+
+        assertThat(action, `is`(NextAction.ConfirmSignup(null) as NextAction))
+    }
+
+    @Test
+    public fun testConfirmSignupPasswordComplexityMapped() {
+        val raw = mapOf(
+            ACTION_KEY to "action:signup:confirm:v1",
+            "password_complexity_options" to mapOf(
+                "min_length" to 8L,
+                "character_types" to listOf("lowercase", "uppercase", "number", "special")
+            )
+        )
+        val action = listOf(raw).toNextActions().first() as NextAction.ConfirmSignup
+
+        val password = action.password!!
+        assertThat(password.required, `is`(false))
+        assertThat(password.complexity.minLength, `is`(8))
+        assertThat(
+            password.complexity.characterTypes,
+            `is`(
+                listOf(
+                    SignupPasswordComplexity.CharacterType.LOWERCASE,
+                    SignupPasswordComplexity.CharacterType.UPPERCASE,
+                    SignupPasswordComplexity.CharacterType.NUMBER,
+                    SignupPasswordComplexity.CharacterType.SPECIAL
+                )
+            )
+        )
+    }
+
+    @Test
+    public fun testConfirmSignupAcceptsAWholeMinLengthOfAnyNumberType() {
+        for (minLength in listOf<Number>(8, 8L, 8.0)) {
+            val raw = mapOf(
+                ACTION_KEY to "action:signup:confirm:v1",
+                "password_complexity_options" to mapOf("min_length" to minLength)
+            )
+            val action = listOf(raw).toNextActions().first() as NextAction.ConfirmSignup
+
+            assertThat(action.password!!.complexity.minLength, `is`(8))
+            assertThat(action.password!!.complexity.characterTypes, `is`(emptyList()))
+        }
+    }
+
+    @Test
+    public fun testConfirmSignupSkipsUnknownAndRepeatedCharacterTypes() {
+        val raw = mapOf(
+            ACTION_KEY to "action:signup:confirm:v1",
+            "password_complexity_options" to mapOf(
+                "min_length" to 8L,
+                "character_types" to listOf("number", "emoji", "number", 3, "special")
+            )
+        )
+        val action = listOf(raw).toNextActions().first() as NextAction.ConfirmSignup
+
+        assertThat(
+            action.password!!.complexity.characterTypes,
+            `is`(listOf(SignupPasswordComplexity.CharacterType.NUMBER, SignupPasswordComplexity.CharacterType.SPECIAL))
+        )
+    }
+
+    @Test
+    public fun testConfirmSignupWithoutAValidMinLengthHasNoPassword() {
+        val invalid = listOf<Any?>(null, 0L, -1L, 8.5, "8", 3_000_000_000L)
+        for (minLength in invalid) {
+            val options = if (minLength == null) mapOf("character_types" to listOf("number")) else mapOf("min_length" to minLength)
+            val raw = mapOf(ACTION_KEY to "action:signup:confirm:v1", "password_complexity_options" to options)
+            val action = listOf(raw).toNextActions().first() as NextAction.ConfirmSignup
+
+            assertThat("min_length=$minLength", action.password, `is`(nullValue()))
+        }
+    }
+
+    /** Parses [authnParams] the way the SDK does, so whole JSON numbers arrive as `Long`. */
+    private fun passkeyOffer(authnParams: String): List<Map<String, Any>> {
+        val raw: Map<String, Any> = GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create().fromJson(
+            """{"action":"action:verify:passkey:v1","authn_params_public_key":$authnParams}""",
+            object : TypeToken<Map<String, Any>>() {}.type
+        )
+        return listOf(raw)
     }
 }

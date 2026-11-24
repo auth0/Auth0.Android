@@ -1,6 +1,7 @@
 package com.auth0.sample.embedded
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.auth0.android.Auth0
@@ -11,6 +12,7 @@ import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
+import com.auth0.android.embedded.passkey.PasskeyAssertion
 import com.auth0.android.request.DefaultClient
 import com.auth0.android.result.Credentials
 import kotlinx.coroutines.Job
@@ -75,14 +77,24 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
     /** Terminal step: yields credentials, or continues if the server requires a second factor. */
     fun verifyPassword(password: String): Unit = runTerminalStep { client.verifyPassword(password).await() }
 
+    /**
+     * Terminal step: submits the passkey assertion. Yields credentials, or continues with a fresh
+     * [NextAction.VerifyPasskey] if the passkey was rejected, or with MFA if the tenant requires it.
+     */
+    fun verifyPasskey(authenticationResponseJson: String): Unit =
+        runTerminalStep { client.verifyPasskey(PasskeyAssertion(authenticationResponseJson)).await() }
+
     /** Terminal step: acknowledges the rotated recovery code. */
     fun confirmRecoveryCode(): Unit = runTerminalStep { client.confirmRecoveryCode().await() }
 
     /** Continuation: the server answers with the identify step for the new user's identifier. */
     fun signup(): Unit = runStep { client.signup().await() }
 
-    /** Terminal step: creates the account and yields credentials, or continues if MFA is required. */
-    fun confirmSignup(): Unit = runTerminalStep { client.confirmSignup().await() }
+    /**
+     * Terminal step: creates the account and yields credentials, or continues if MFA is required or the
+     * password is rejected. Pass the password only when the confirm action offers one.
+     */
+    fun confirmSignup(password: String? = null): Unit = runTerminalStep { client.confirmSignup(password).await() }
 
     /**
      * Polls for push approval. The SDK performs one poll per call, so the app owns the loop: wait the
@@ -146,6 +158,7 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
             _authorizeState.value = try {
                 AuthorizeUiState.Authenticated(step())
             } catch (error: EmbeddedAuthException) {
+                error.logStepFailure()
                 error.toAuthorizeState()
             }
         }
@@ -165,9 +178,18 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
                 step()
                 AuthorizeUiState.Message("Step completed without a continuation.")
             } catch (error: EmbeddedAuthException) {
+                error.logStepFailure()
                 error.toAuthorizeState()
             }
         }
+    }
+
+    private fun EmbeddedAuthException.logStepFailure() {
+        val reason = (error as? EmbeddedAuthError.InsufficientAuthorization)?.reason
+        Log.e(
+            "EmbeddedStep",
+            "step failed: error=${error::class.simpleName}, reason=$reason, code=$code, status=$statusCode, description=$description"
+        )
     }
 
     private fun EmbeddedAuthException.toAuthorizeState(): AuthorizeUiState =
@@ -175,6 +197,7 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
             is EmbeddedAuthError.InsufficientAuthorization ->
                 if (e.nextActions.isNotEmpty()) AuthorizeUiState.ActionsAvailable(e.nextActions, e.reason)
                 else AuthorizeUiState.Failed(this)
+
             else -> AuthorizeUiState.Failed(this)
         }
 

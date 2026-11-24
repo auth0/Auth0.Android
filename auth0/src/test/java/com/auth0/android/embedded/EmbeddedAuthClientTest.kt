@@ -2,14 +2,18 @@ package com.auth0.android.embedded
 
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
+import com.auth0.android.embedded.authorize.CredentialRequirement
 import com.auth0.android.embedded.authorize.EmbeddedCapability
 import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpChannel
 import com.auth0.android.embedded.authorize.OtpType
+import com.auth0.android.embedded.authorize.SignupPasswordComplexity
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.embedded.authorize.SignupIdentifier
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
+import com.auth0.android.embedded.passkey.PasskeyAssertion
+import com.auth0.android.embedded.passkey.UserVerification
 import com.auth0.android.util.AlgorithmHelper
 import com.auth0.android.util.EmbeddedAuthMockServer
 import com.auth0.android.util.SSLTestUtils.testClient
@@ -34,6 +38,7 @@ import org.mockito.kotlin.mock
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.StringReader
+import org.hamcrest.Matchers.containsString
 import java.security.MessageDigest
 import java.util.Base64
 
@@ -127,7 +132,8 @@ public class EmbeddedAuthClientTest {
                     "action:verify:recovery-code:v1",
                     "action:confirm:recovery-code:v1",
                     "action:signup:v1",
-                    "action:signup:confirm:v1"
+                    "action:signup:confirm:v1",
+                    "action:verify:passkey:v1"
                 )
             )
         )
@@ -1722,7 +1728,7 @@ public class EmbeddedAuthClientTest {
 
         val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
 
-        assertThat(error.nextActions, `is`(listOf<NextAction>(NextAction.ConfirmSignup)))
+        assertThat(error.nextActions, `is`(listOf<NextAction>(NextAction.ConfirmSignup(null))))
         assertThat(error.nextActions[0].capability, `is`(EmbeddedCapability.CONFIRM_SIGNUP))
     }
 
@@ -1827,6 +1833,315 @@ public class EmbeddedAuthClientTest {
         assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
+    // ── signup password ──────────────────────────────────────────────────────────
+
+    @Test
+    public fun `authorize reports a required signup password`(): Unit = runTest {
+        val signup = firstSignupAction(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
+
+        assertThat(signup.passwordRequirement, `is`(CredentialRequirement.REQUIRED))
+    }
+
+    @Test
+    public fun `authorize reports an optional signup password`(): Unit = runTest {
+        val signup = firstSignupAction(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL)
+
+        assertThat(signup.passwordRequirement, `is`(CredentialRequirement.OPTIONAL))
+    }
+
+    @Test
+    public fun `authorize reports no signup password when the connection collects none`(): Unit = runTest {
+        val signup = firstSignupAction(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_REQUIRED)
+
+        assertThat(signup.passwordRequirement, `is`(CredentialRequirement.NONE))
+    }
+
+    @Test
+    public fun `confirm offer carries the password rules and the requirement announced by the signup action`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+
+        val password = (error.nextActions[0] as NextAction.ConfirmSignup).password!!
+        assertThat(password.required, `is`(true))
+        assertThat(password.complexity.minLength, `is`(8))
+        assertThat(
+            password.complexity.characterTypes,
+            `is`(listOf(SignupPasswordComplexity.CharacterType.LOWERCASE, SignupPasswordComplexity.CharacterType.NUMBER))
+        )
+    }
+
+    @Test
+    public fun `confirm offer reports an optional password as not required`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+
+        assertThat((error.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(false))
+    }
+
+    @Test
+    public fun `confirm offer keeps the requirement through steps that don't repeat the signup action`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL)
+        assertEmbeddedErrorSuspending { client.signup().await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+
+        assertThat((error.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(true))
+    }
+
+    @Test
+    public fun `confirm offer is not required when no signup action announced a password`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+
+        assertThat((error.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(false))
+    }
+
+    @Test
+    public fun `a new authorize forgets the requirement of the previous flow`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+
+        assertThat((error.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(false))
+    }
+
+    @Test
+    public fun `confirmSignup await sends the password unchanged and completes the flow`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        val credentials = client.confirmSignup(" Pa55 word ").await()
+
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.keys().asSequence().toSet(), `is`(setOf("auth_session", "action", "client_id", "password")))
+        assertThat(body.getString("password"), `is`(" Pa55 word "))
+        mockAPI.takeRequest()
+
+        val followOn = assertEmbeddedErrorSuspending { client.confirmSignup(" Pa55 word ").await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `confirmSignup await doesn't send an empty password`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        client.confirmSignup("").await()
+
+        assertThat(bodyOf(mockAPI.takeRequest()).has("password"), `is`(false))
+    }
+
+    @Test
+    public fun `confirmSignup await leaves a password the connection doesn't collect to the server`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_REQUIRED)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP)
+        assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnSignupPasswordError("password_not_accepted", EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP)
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup("Pa55word1").await() }
+
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("password"), `is`("Pa55word1"))
+        val failure = error.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(failure.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_NOT_ACCEPTED))
+        assertThat(failure.nextActions, `is`(listOf<NextAction>(NextAction.ConfirmSignup(null))))
+    }
+
+    @Test
+    public fun `password_required from the server makes the re-offered confirm required`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+        assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnSignupPasswordError("password_required")
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup("Pa55word1").await() }
+        mockAPI.takeRequest()
+
+        val failure = error.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(failure.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_REQUIRED))
+        assertThat((failure.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(true))
+    }
+
+    @Test
+    public fun `password_required keeps the confirm required on the next step`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+        assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnSignupPasswordError("password_required")
+        assertEmbeddedErrorSuspending { client.confirmSignup().await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnSignupPasswordError("invalid_password")
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup("weak").await() }
+        mockAPI.takeRequest()
+
+        val failure = error.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat((failure.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(true))
+    }
+
+    @Test
+    public fun `invalid_password re-offers confirm and rotates the session so the user can try again`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+        assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnSignupPasswordError("invalid_password")
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup("weak").await() }
+        mockAPI.takeRequest()
+
+        val failure = error.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(failure.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSWORD))
+        assertThat((failure.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(true))
+
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        client.confirmSignup("Str0ngPassw0rd").await()
+
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.getString("auth_session"), `is`(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION))
+        assertThat(body.getString("password"), `is`("Str0ngPassw0rd"))
+    }
+
+    @Test
+    public fun `challengeEmail await surfaces TooManyResendAttempts and clears the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnTooManyResendAttempts()
+
+        val error = assertEmbeddedErrorSuspending { client.challengeEmail().await() }
+        mockAPI.takeRequest()
+
+        assertThat(error.error, `is`(EmbeddedAuthError.TooManyResendAttempts))
+        val followOn = assertEmbeddedErrorSuspending { client.challengeEmail().await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    // ── verifyPasskey ────────────────────────────────────────────────────────────
+
+    @Test
+    public fun `authorize surfaces the passkey offer next to the other first factors`(): Unit = runTest {
+        mockAPI.willReturnContinuationWith(
+            EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL,
+            EmbeddedAuthMockServer.NEXT_VERIFY_PASSKEY
+        )
+
+        val error = assertEmbeddedErrorSuspending {
+            client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await()
+        }
+
+        val offer = error.nextActions[1] as NextAction.VerifyPasskey
+        assertThat(error.nextActions[0], `is`(NextAction.IdentifyEmail as NextAction))
+        assertThat(offer.options.challenge, `is`("Y2hhbGxlbmdl"))
+        assertThat(offer.options.timeout, `is`(900000L))
+        assertThat(offer.options.rpId, `is`("login.example.com"))
+        assertThat(offer.options.userVerification, `is`(UserVerification.PREFERRED))
+        val requestJson = JSONObject(offer.requestJson)
+        assertThat(requestJson.getString("challenge"), `is`("Y2hhbGxlbmdl"))
+        assertThat(offer.requestJson, containsString("\"timeout\":900000"))
+        assertThat(offer.requestJson, not(containsString("900000.0")))
+    }
+
+    @Test
+    public fun `verifyPasskey await POSTs exactly the schema fields and returns credentials`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        val credentials = client.verifyPasskey(PasskeyAssertion(passkeyAssertion())).await()
+
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        val authorize = mockAPI.takeRequest()
+        assertThat(authorize.requestUrl?.encodedPath, `is`("/e/authorize"))
+        val body = bodyOf(authorize)
+        assertThat(body.keys().asSequence().toSet(), `is`(setOf("auth_session", "action", "client_id", "authn_response")))
+        assertThat(body.getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+        assertThat(body.getString("action"), `is`("action:verify:passkey:v1"))
+        assertThat(body.getString("client_id"), `is`(CLIENT_ID))
+        val response = body.getJSONObject("authn_response")
+        assertThat(
+            response.keys().asSequence().toSet(),
+            `is`(setOf("id", "rawId", "type", "response", "authenticatorAttachment", "clientExtensionResults"))
+        )
+        assertThat(response.getString("id"), `is`("credential-id"))
+        assertThat(response.getString("type"), `is`("public-key"))
+        assertThat(response.getString("authenticatorAttachment"), `is`("platform"))
+        assertThat(response.getJSONObject("clientExtensionResults").getJSONObject("credProps").getBoolean("rk"), `is`(true))
+        val inner = response.getJSONObject("response")
+        assertThat(
+            inner.keys().asSequence().toSet(),
+            `is`(setOf("clientDataJSON", "authenticatorData", "signature", "userHandle"))
+        )
+        assertThat(inner.getString("userHandle"), `is`("user-handle"))
+        assertThat(mockAPI.takeRequest().requestUrl?.encodedPath, `is`("/oauth/token"))
+
+        val followOn = assertEmbeddedErrorSuspending { client.verifyPasskey(PasskeyAssertion(passkeyAssertion())).await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `verifyPasskey await reports no active session before checking the assertion`(): Unit = runTest {
+        val error = assertEmbeddedErrorSuspending { client.verifyPasskey(PasskeyAssertion("""{"id":"a"}""")).await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.NoActiveSession))
+        assertThat(mockAPI.server.requestCount, `is`(0))
+    }
+
+    @Test
+    public fun `verifyPasskey await rejects an invalid assertion without sending a request and keeps the session`(): Unit = runTest {
+        establishSession()
+        val sentBefore = mockAPI.server.requestCount
+
+        val error = assertEmbeddedErrorSuspending { client.verifyPasskey(PasskeyAssertion("""{"id":"a"}""")).await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.InvalidInput))
+        assertThat(error.code, `is`("invalid_input"))
+        assertThat(error.statusCode, `is`(0))
+        assertThat(mockAPI.server.requestCount, `is`(sentBefore))
+
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        client.verifyPasskey(PasskeyAssertion(passkeyAssertion())).await()
+
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+    }
+
+    @Test
+    public fun `verifyPasskey await surfaces invalid_passkey with a fresh offer and rotates the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnInvalidPasskey()
+
+        val error = assertEmbeddedErrorSuspending { client.verifyPasskey(PasskeyAssertion(passkeyAssertion())).await() }
+        mockAPI.takeRequest()
+
+        val pending = error.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(pending.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSKEY))
+        val offer = pending.nextActions[0] as NextAction.VerifyPasskey
+        assertThat(offer.options.challenge, `is`("ZnJlc2g"))
+
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        val credentials = client.verifyPasskey(PasskeyAssertion(passkeyAssertion())).await()
+
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION))
+    }
+
     // ── Session preservation on MFA errors ───────────────────────────────────────
 
     @Test
@@ -1920,6 +2235,21 @@ public class EmbeddedAuthClientTest {
 
     // ── Helpers ──────────────────────────────────────────────────────────────────
 
+    private suspend fun firstSignupAction(signupMenu: String): NextAction.Signup {
+        mockAPI.willReturnContinuationWith(signupMenu)
+        val error = assertEmbeddedErrorSuspending {
+            client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await()
+        }
+        return error.nextActions[0] as NextAction.Signup
+    }
+
+    /** Calls authorize with [firstMenu] as the first set of actions. */
+    private fun establishSignupSession(firstMenu: String) {
+        mockAPI.willReturnContinuationWith(firstMenu)
+        try { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() } catch (_: EmbeddedAuthException) {}
+        mockAPI.takeRequest()
+    }
+
     /** Enqueues a continuation and calls authorize to populate [transactionState]. */
     private fun establishSession() {
         mockAPI.willReturnInsufficientAuthorization()
@@ -1939,6 +2269,23 @@ public class EmbeddedAuthClientTest {
         try { block() } catch (ex: EmbeddedAuthException) { error = ex }
         assertThat("expected EmbeddedAuthException", error, `is`(notNullValue()))
         return error!!
+    }
+
+    private fun passkeyAssertion(
+        attachment: String? = "platform",
+        extensions: String? = """{"credProps":{"rk":true}}""",
+        userHandle: String? = "user-handle",
+        extraTop: String = "",
+        extraResponse: String = ""
+    ): String = buildString {
+        append("""{"id":"credential-id","rawId":"credential-raw-id","type":"public-key"""")
+        attachment?.let { append(""","authenticatorAttachment":"$it"""") }
+        extensions?.let { append(""","clientExtensionResults":$it""") }
+        append(extraTop)
+        append(""","response":{"clientDataJSON":"client-data","authenticatorData":"authenticator-data","signature":"the-signature"""")
+        userHandle?.let { append(""","userHandle":"$it"""") }
+        append(extraResponse)
+        append("}}")
     }
 
     private fun s256(verifier: String): String =
