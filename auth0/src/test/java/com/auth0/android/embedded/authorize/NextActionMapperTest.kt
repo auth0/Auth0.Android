@@ -262,19 +262,33 @@ public class NextActionMapperTest {
     }
 
     @Test
-    public fun testVerifyPasskeyDroppedWhenARequiredFieldIsMissing() {
-        val complete = mapOf(
-            "challenge" to "c",
-            "timeout" to 1,
-            "userVerification" to "preferred",
-            "rpId" to "r"
-        )
-        for (field in complete.keys) {
+    public fun testVerifyPasskeyAcceptsAWholeTimeoutOfAnyNumberType() {
+        for (timeout in listOf<Number>(900000, 900000L, 900000.0)) {
             val offer = mapOf(
                 ACTION_KEY to "action:verify:passkey:v1",
-                "authn_params_public_key" to (complete - field)
+                "authn_params_public_key" to mapOf(
+                    "challenge" to "c",
+                    "timeout" to timeout,
+                    "userVerification" to "preferred",
+                    "rpId" to "r"
+                )
             )
-            assertThat("without $field", listOf(offer).toNextActions().isEmpty(), `is`(true))
+            val action = listOf(offer).toNextActions().first() as NextAction.VerifyPasskey
+
+            assertThat("timeout=$timeout", action.options.timeout, `is`(900000L))
+        }
+    }
+
+    @Test
+    public fun testVerifyPasskeyDroppedWhenARequiredFieldIsMissing() {
+        val offer = passkeyOffer("""{"challenge":"c","timeout":1,"userVerification":"preferred","rpId":"r"}""").first()
+        @Suppress("UNCHECKED_CAST")
+        val params = offer["authn_params_public_key"] as Map<String, Any>
+
+        assertThat(listOf(offer).toNextActions().first(), instanceOf(NextAction.VerifyPasskey::class.java))
+        for (field in params.keys) {
+            val incomplete = offer + ("authn_params_public_key" to (params - field))
+            assertThat("without $field", listOf(incomplete).toNextActions().isEmpty(), `is`(true))
         }
     }
 

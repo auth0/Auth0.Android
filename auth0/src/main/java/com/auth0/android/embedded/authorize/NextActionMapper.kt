@@ -46,7 +46,7 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
                 ?: return dropped(raw, AUTHN_PARAMS_PUBLIC_KEY_KEY)
             val challenge = params[CHALLENGE_KEY] as? String
                 ?: return dropped(raw, "$AUTHN_PARAMS_PUBLIC_KEY_KEY.$CHALLENGE_KEY")
-            val timeout = params[TIMEOUT_KEY] as? Long
+            val timeout = (params[TIMEOUT_KEY] as? Number)?.toWholeLong()
                 ?: return dropped(raw, "$AUTHN_PARAMS_PUBLIC_KEY_KEY.$TIMEOUT_KEY")
             val rpId = params[RP_ID_KEY] as? String
                 ?: return dropped(raw, "$AUTHN_PARAMS_PUBLIC_KEY_KEY.$RP_ID_KEY")
@@ -166,6 +166,9 @@ private fun Map<String, Any>.toSignupPassword(): SignupPassword? {
 
 private fun Number.toWholeInt(): Int? =
     toDouble().takeIf { it % 1.0 == 0.0 && it in Int.MIN_VALUE.toDouble()..Int.MAX_VALUE.toDouble() }?.toInt()
+
+private fun Number.toWholeLong(): Long? =
+    toDouble().takeIf { it % 1.0 == 0.0 && it in Long.MIN_VALUE.toDouble()..Long.MAX_VALUE.toDouble() }?.toLong()
 
 private fun passwordCharacterType(value: String): SignupPasswordComplexity.CharacterType? = when (value) {
     "lowercase" -> SignupPasswordComplexity.CharacterType.LOWERCASE

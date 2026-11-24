@@ -22,6 +22,7 @@ private const val MAX_CLIENT_DATA_JSON_LENGTH = 1000
 private const val MAX_AUTHENTICATOR_DATA_LENGTH = 750
 private const val MAX_SIGNATURE_LENGTH = 750
 private const val MAX_USER_HANDLE_LENGTH = 100
+private const val MAX_CLIENT_EXTENSION_RESULTS = 20
 
 private val AUTHENTICATOR_ATTACHMENTS = setOf("platform", "cross-platform")
 
@@ -42,13 +43,14 @@ internal class InvalidPasskeyResponseException(message: String) : IllegalArgumen
 
 /**
  * Builds the `authn_response` object from the `authenticationResponseJson` the platform returns,
- * keeping only the fields `/e/authorize` accepts and enforcing its required fields, `type` value and
- * length limits. `authenticatorAttachment` is kept only when it is a known value;
- * `clientExtensionResults` is forwarded unchanged when it is an object.
+ * keeping only the fields `/e/authorize` accepts. It enforces the required fields, the `type` value and the
+ * length limits of the `PasskeyAssertion.json` schema of the embedded authorize API, and must be kept in line
+ * with them. `authenticatorAttachment` is kept only when it is a known value; `clientExtensionResults` is
+ * forwarded unchanged when it is an object with at most 20 entries, and left out otherwise.
  *
- * The rules mirror the `PasskeyAssertion.json` schema of the embedded authorize API, and must be kept in
- * line with it. They are checked here because the server answers a request that breaks the schema with a
- * terminal `invalid_request`, which ends the flow, while a local failure leaves the flow open.
+ * These are checked here because the server answers a request that breaks the schema with a terminal
+ * `invalid_request`, which ends the flow, while a local failure leaves the flow open. The server applies
+ * the schema's other rules, such as the characters a string may contain; the platform's responses meet them.
  *
  * @throws InvalidPasskeyResponseException if the assertion doesn't satisfy the schema.
  */
@@ -85,6 +87,7 @@ internal fun passkeyAuthnResponse(authenticationResponseJson: String): Map<Strin
             ?.takeIf { it in AUTHENTICATOR_ATTACHMENTS }
             ?.let { put(AUTHENTICATOR_ATTACHMENT_KEY, it) }
         (assertion.get(CLIENT_EXTENSION_RESULTS_KEY) as? JsonObject)
+            ?.takeIf { it.size() <= MAX_CLIENT_EXTENSION_RESULTS }
             ?.let { put(CLIENT_EXTENSION_RESULTS_KEY, it) }
     }
 }

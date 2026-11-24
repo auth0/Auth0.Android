@@ -120,6 +120,24 @@ public class PasskeyAssertionTest {
     }
 
     @Test
+    public fun `keeps clientExtensionResults with at most 20 entries`() {
+        val input = edit { add("clientExtensionResults", extensionResults(20)) }
+
+        val result = passkeyAuthnResponse(input)
+
+        assertThat((result["clientExtensionResults"] as JsonObject).size(), `is`(20))
+    }
+
+    @Test
+    public fun `leaves out clientExtensionResults with more than 20 entries`() {
+        val input = edit { add("clientExtensionResults", extensionResults(21)) }
+
+        val result = passkeyAuthnResponse(input)
+
+        assertThat(result.containsKey("clientExtensionResults"), `is`(false))
+    }
+
+    @Test
     public fun `rejects input that is not a JSON object`() {
         for (input in listOf("", "   ", "null", "[1]", "\"text\"", "not json", """{"id":"a"} trailing""")) {
             assertRejected(input)
@@ -191,6 +209,9 @@ public class PasskeyAssertionTest {
         assertThat(tooLong.message, not(containsString("SECRET-VALUE")))
         assertThat(wrongType.message, not(containsString("SECRET-TYPE")))
     }
+
+    private fun extensionResults(count: Int): JsonObject =
+        JsonObject().apply { repeat(count) { addProperty("extension$it", true) } }
 
     private fun edit(change: JsonObject.() -> Unit): String =
         JsonParser.parseString(validAssertion).asJsonObject.apply(change).toString()

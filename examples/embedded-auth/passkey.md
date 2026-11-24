@@ -49,12 +49,16 @@ val assertionJson = try {
         context,
         GetCredentialRequest(listOf(GetPublicKeyCredentialOption(passkey.requestJson)))
     )
-    (result.credential as PublicKeyCredential).authenticationResponseJson
+    (result.credential as? PublicKeyCredential)?.authenticationResponseJson
+        ?: return /* the platform returned a credential that isn't a passkey — offer the other first factors */
 } catch (e: GetCredentialCancellationException) {
     /* the user dismissed the sheet — nothing changed, offer it again or another option */
     return
 } catch (e: NoCredentialException) {
     /* no passkey for this site on the device — offer the other first factors */
+    return
+} catch (e: GetCredentialException) {
+    /* the ceremony failed, for example "RP ID cannot be validated" or an unsupported device — offer the other first factors */
     return
 }
 

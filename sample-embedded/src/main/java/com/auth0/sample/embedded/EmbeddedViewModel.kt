@@ -54,13 +54,11 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
         client.authorize(connection, audience = defaultAudience).await()
     }
 
-    fun identifyEmail(email: String): Unit =
-        runStep { client.identify(email, IdentifierType.EMAIL).await() }
+    fun identifyEmail(email: String): Unit = runStep { client.identify(email, IdentifierType.EMAIL).await() }
 
     fun challengeEmail(index: Int): Unit = runStep { client.challengeEmail(index).await() }
 
-    fun identifyPhone(phone: String): Unit =
-        runStep { client.identify(phone, IdentifierType.PHONE).await() }
+    fun identifyPhone(phone: String): Unit = runStep { client.identify(phone, IdentifierType.PHONE).await() }
 
     fun identifyUsername(username: String): Unit =
         runStep { client.identify(username, IdentifierType.USERNAME).await() }
@@ -74,12 +72,10 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
     fun verifyRecoveryCode(code: String): Unit = runStep { client.verifyRecoveryCode(code).await() }
 
     /** Terminal step: on success this yields [Credentials][com.auth0.android.result.Credentials]. */
-    fun verifyOtp(code: String, type: OtpType): Unit =
-        runTerminalStep { client.verifyOtp(code, type).await() }
+    fun verifyOtp(code: String, type: OtpType): Unit = runTerminalStep { client.verifyOtp(code, type).await() }
 
     /** Terminal step: yields credentials, or continues if the server requires a second factor. */
-    fun verifyPassword(password: String): Unit =
-        runTerminalStep { client.verifyPassword(password).await() }
+    fun verifyPassword(password: String): Unit = runTerminalStep { client.verifyPassword(password).await() }
 
     /**
      * Terminal step: submits the passkey assertion. Yields credentials, or continues with a fresh
@@ -107,10 +103,8 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
      */
     fun verifyPush(initialPollInMs: Int) {
         pollJob?.cancel()
-        val offered =
-            (_authorizeState.value as? AuthorizeUiState.ActionsAvailable)?.actions.orEmpty()
-        _authorizeState.value =
-            AuthorizeUiState.Polling(offered.filterNot { it is NextAction.VerifyOob })
+        val offered = (_authorizeState.value as? AuthorizeUiState.ActionsAvailable)?.actions.orEmpty()
+        _authorizeState.value = AuthorizeUiState.Polling(offered.filterNot { it is NextAction.VerifyOob })
         pollJob = viewModelScope.launch {
             var delayMs = initialPollInMs.toLong()
             while (true) {
@@ -201,10 +195,7 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
     private fun EmbeddedAuthException.toAuthorizeState(): AuthorizeUiState =
         when (val e = error) {
             is EmbeddedAuthError.InsufficientAuthorization ->
-                if (e.nextActions.isNotEmpty()) AuthorizeUiState.ActionsAvailable(
-                    e.nextActions,
-                    e.reason
-                )
+                if (e.nextActions.isNotEmpty()) AuthorizeUiState.ActionsAvailable(e.nextActions, e.reason)
                 else AuthorizeUiState.Failed(this)
 
             else -> AuthorizeUiState.Failed(this)

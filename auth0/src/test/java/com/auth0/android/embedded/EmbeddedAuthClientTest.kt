@@ -8,9 +8,9 @@ import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpChannel
 import com.auth0.android.embedded.authorize.OtpType
+import com.auth0.android.embedded.authorize.SignupPasswordComplexity
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.embedded.authorize.SignupIdentifier
-import com.auth0.android.embedded.authorize.SignupPasswordComplexity
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
 import com.auth0.android.embedded.passkey.PasskeyAssertion
 import com.auth0.android.embedded.passkey.UserVerification
@@ -19,7 +19,6 @@ import com.auth0.android.util.SSLTestUtils.testClient
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.hasSize
@@ -34,6 +33,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.StringReader
+import org.hamcrest.Matchers.containsString
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
@@ -1644,6 +1644,187 @@ public class EmbeddedAuthClientTest {
         assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
+    // ── signup password ──────────────────────────────────────────────────────────
+
+    @Test
+    public fun `authorize reports a required signup password`(): Unit = runTest {
+        val signup = firstSignupAction(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
+
+        assertThat(signup.passwordRequirement, `is`(CredentialRequirement.REQUIRED))
+    }
+
+    @Test
+    public fun `authorize reports an optional signup password`(): Unit = runTest {
+        val signup = firstSignupAction(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL)
+
+        assertThat(signup.passwordRequirement, `is`(CredentialRequirement.OPTIONAL))
+    }
+
+    @Test
+    public fun `authorize reports no signup password when the connection collects none`(): Unit = runTest {
+        val signup = firstSignupAction(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_REQUIRED)
+
+        assertThat(signup.passwordRequirement, `is`(CredentialRequirement.NONE))
+    }
+
+    @Test
+    public fun `confirm offer carries the password rules and the requirement announced by the signup action`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+
+        val password = (error.nextActions[0] as NextAction.ConfirmSignup).password!!
+        assertThat(password.required, `is`(true))
+        assertThat(password.complexity.minLength, `is`(8))
+        assertThat(
+            password.complexity.characterTypes,
+            `is`(listOf(SignupPasswordComplexity.CharacterType.LOWERCASE, SignupPasswordComplexity.CharacterType.NUMBER))
+        )
+    }
+
+    @Test
+    public fun `confirm offer reports an optional password as not required`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+
+        assertThat((error.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(false))
+    }
+
+    @Test
+    public fun `confirm offer keeps the requirement through steps that don't repeat the signup action`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL)
+        assertEmbeddedErrorSuspending { client.signup().await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+
+        assertThat((error.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(true))
+    }
+
+    @Test
+    public fun `confirm offer is not required when no signup action announced a password`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+
+        assertThat((error.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(false))
+    }
+
+    @Test
+    public fun `a new authorize forgets the requirement of the previous flow`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+
+        assertThat((error.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(false))
+    }
+
+    @Test
+    public fun `confirmSignup await sends the password unchanged and completes the flow`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        val credentials = client.confirmSignup(" Pa55 word ").await()
+
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.keys().asSequence().toSet(), `is`(setOf("auth_session", "action", "client_id", "password")))
+        assertThat(body.getString("password"), `is`(" Pa55 word "))
+        mockAPI.takeRequest()
+
+        val followOn = assertEmbeddedErrorSuspending { client.confirmSignup(" Pa55 word ").await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `confirmSignup await doesn't send an empty password`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        client.confirmSignup("").await()
+
+        assertThat(bodyOf(mockAPI.takeRequest()).has("password"), `is`(false))
+    }
+
+    @Test
+    public fun `confirmSignup await leaves a password the connection doesn't collect to the server`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_REQUIRED)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP)
+        assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnSignupPasswordError("password_not_accepted", EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP)
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup("Pa55word1").await() }
+
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("password"), `is`("Pa55word1"))
+        val failure = error.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(failure.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_NOT_ACCEPTED))
+        assertThat(failure.nextActions, `is`(listOf<NextAction>(NextAction.ConfirmSignup(null))))
+    }
+
+    @Test
+    public fun `password_required from the server makes the re-offered confirm required`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+        assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnSignupPasswordError("password_required")
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup("Pa55word1").await() }
+        mockAPI.takeRequest()
+
+        val failure = error.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(failure.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_REQUIRED))
+        assertThat((failure.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(true))
+    }
+
+    @Test
+    public fun `invalid_password re-offers confirm and rotates the session so the user can try again`(): Unit = runTest {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
+        assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnSignupPasswordError("invalid_password")
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup("weak").await() }
+        mockAPI.takeRequest()
+
+        val failure = error.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(failure.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSWORD))
+        assertThat((failure.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(true))
+
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        client.confirmSignup("Str0ngPassw0rd").await()
+
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.getString("auth_session"), `is`(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION))
+        assertThat(body.getString("password"), `is`("Str0ngPassw0rd"))
+    }
+
+    @Test
+    public fun `challengeEmail await surfaces TooManyResendAttempts and clears the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnTooManyResendAttempts()
+
+        val error = assertEmbeddedErrorSuspending { client.challengeEmail().await() }
+        mockAPI.takeRequest()
+
+        assertThat(error.error, `is`(EmbeddedAuthError.TooManyResendAttempts))
+        val followOn = assertEmbeddedErrorSuspending { client.challengeEmail().await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
     // ── verifyPasskey ────────────────────────────────────────────────────────────
 
     @Test
@@ -1843,187 +2024,6 @@ public class EmbeddedAuthClientTest {
         // After terminal error, session is cleared
         val error2 = assertEmbeddedError { client.verifyRecoveryCode("CODE").execute() }
         assertThat(error2.error, `is`(EmbeddedAuthError.NoActiveSession))
-    }
-
-    // ── signup password ──────────────────────────────────────────────────────────
-
-    @Test
-    public fun `authorize reports a required signup password`(): Unit = runTest {
-        val signup = firstSignupAction(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
-
-        assertThat(signup.passwordRequirement, `is`(CredentialRequirement.REQUIRED))
-    }
-
-    @Test
-    public fun `authorize reports an optional signup password`(): Unit = runTest {
-        val signup = firstSignupAction(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL)
-
-        assertThat(signup.passwordRequirement, `is`(CredentialRequirement.OPTIONAL))
-    }
-
-    @Test
-    public fun `authorize reports no signup password when the connection collects none`(): Unit = runTest {
-        val signup = firstSignupAction(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_REQUIRED)
-
-        assertThat(signup.passwordRequirement, `is`(CredentialRequirement.NONE))
-    }
-
-    @Test
-    public fun `confirm offer carries the password rules and the requirement announced by the signup action`(): Unit = runTest {
-        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
-        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
-
-        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
-
-        val password = (error.nextActions[0] as NextAction.ConfirmSignup).password!!
-        assertThat(password.required, `is`(true))
-        assertThat(password.complexity.minLength, `is`(8))
-        assertThat(
-            password.complexity.characterTypes,
-            `is`(listOf(SignupPasswordComplexity.CharacterType.LOWERCASE, SignupPasswordComplexity.CharacterType.NUMBER))
-        )
-    }
-
-    @Test
-    public fun `confirm offer reports an optional password as not required`(): Unit = runTest {
-        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL)
-        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
-
-        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
-
-        assertThat((error.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(false))
-    }
-
-    @Test
-    public fun `confirm offer keeps the requirement through steps that don't repeat the signup action`(): Unit = runTest {
-        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
-        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL)
-        assertEmbeddedErrorSuspending { client.signup().await() }
-        mockAPI.takeRequest()
-        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
-
-        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
-
-        assertThat((error.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(true))
-    }
-
-    @Test
-    public fun `confirm offer is not required when no signup action announced a password`(): Unit = runTest {
-        establishSession()
-        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
-
-        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
-
-        assertThat((error.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(false))
-    }
-
-    @Test
-    public fun `a new authorize forgets the requirement of the previous flow`(): Unit = runTest {
-        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
-        establishSignupSession(EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL)
-        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
-
-        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
-
-        assertThat((error.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(false))
-    }
-
-    @Test
-    public fun `confirmSignup await sends the password unchanged and completes the flow`(): Unit = runTest {
-        establishSession()
-        mockAPI.willReturnAuthorizeCode()
-        mockAPI.willReturnTokens()
-
-        val credentials = client.confirmSignup(" Pa55 word ").await()
-
-        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
-        val body = bodyOf(mockAPI.takeRequest())
-        assertThat(body.keys().asSequence().toSet(), `is`(setOf("auth_session", "action", "client_id", "password")))
-        assertThat(body.getString("password"), `is`(" Pa55 word "))
-        mockAPI.takeRequest()
-
-        val followOn = assertEmbeddedErrorSuspending { client.confirmSignup(" Pa55 word ").await() }
-        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
-    }
-
-    @Test
-    public fun `confirmSignup await doesn't send an empty password`(): Unit = runTest {
-        establishSession()
-        mockAPI.willReturnAuthorizeCode()
-        mockAPI.willReturnTokens()
-
-        client.confirmSignup("").await()
-
-        assertThat(bodyOf(mockAPI.takeRequest()).has("password"), `is`(false))
-    }
-
-    @Test
-    public fun `confirmSignup await leaves a password the connection doesn't collect to the server`(): Unit = runTest {
-        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_REQUIRED)
-        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP)
-        assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
-        mockAPI.takeRequest()
-        mockAPI.willReturnSignupPasswordError("password_not_accepted", EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP)
-
-        val error = assertEmbeddedErrorSuspending { client.confirmSignup("Pa55word1").await() }
-
-        assertThat(bodyOf(mockAPI.takeRequest()).getString("password"), `is`("Pa55word1"))
-        val failure = error.error as EmbeddedAuthError.InsufficientAuthorization
-        assertThat(failure.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_NOT_ACCEPTED))
-        assertThat(failure.nextActions, `is`(listOf<NextAction>(NextAction.ConfirmSignup(null))))
-    }
-
-    @Test
-    public fun `password_required from the server makes the re-offered confirm required`(): Unit = runTest {
-        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL)
-        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
-        assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
-        mockAPI.takeRequest()
-        mockAPI.willReturnSignupPasswordError("password_required")
-
-        val error = assertEmbeddedErrorSuspending { client.confirmSignup("Pa55word1").await() }
-        mockAPI.takeRequest()
-
-        val failure = error.error as EmbeddedAuthError.InsufficientAuthorization
-        assertThat(failure.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_REQUIRED))
-        assertThat((failure.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(true))
-    }
-
-    @Test
-    public fun `invalid_password re-offers confirm and rotates the session so the user can try again`(): Unit = runTest {
-        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED)
-        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD)
-        assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
-        mockAPI.takeRequest()
-        mockAPI.willReturnSignupPasswordError("invalid_password")
-
-        val error = assertEmbeddedErrorSuspending { client.confirmSignup("weak").await() }
-        mockAPI.takeRequest()
-
-        val failure = error.error as EmbeddedAuthError.InsufficientAuthorization
-        assertThat(failure.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSWORD))
-        assertThat((failure.nextActions[0] as NextAction.ConfirmSignup).password!!.required, `is`(true))
-
-        mockAPI.willReturnAuthorizeCode()
-        mockAPI.willReturnTokens()
-        client.confirmSignup("Str0ngPassw0rd").await()
-
-        val body = bodyOf(mockAPI.takeRequest())
-        assertThat(body.getString("auth_session"), `is`(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION))
-        assertThat(body.getString("password"), `is`("Str0ngPassw0rd"))
-    }
-
-    @Test
-    public fun `challengeEmail await surfaces TooManyResendAttempts and clears the session`(): Unit = runTest {
-        establishSession()
-        mockAPI.willReturnTooManyResendAttempts()
-
-        val error = assertEmbeddedErrorSuspending { client.challengeEmail().await() }
-        mockAPI.takeRequest()
-
-        assertThat(error.error, `is`(EmbeddedAuthError.TooManyResendAttempts))
-        val followOn = assertEmbeddedErrorSuspending { client.challengeEmail().await() }
-        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────────
