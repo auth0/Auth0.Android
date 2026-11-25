@@ -4,9 +4,9 @@ apply plugin: 'signing'
 
 apply from: rootProject.file('gradle/versioning.gradle')
 
-task javadocJar(type: Jar, dependsOn: dokkaHtml) {
+task javadocJar(type: Jar) {
     archiveClassifier = "javadoc"
-    from dokkaHtml.outputDirectory
+    from tasks.named('dokkaGeneratePublicationHtml').flatMap { it.outputDirectory }
 }
 
 task sourcesJar(type: Jar) {
