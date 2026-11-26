@@ -13,7 +13,7 @@ buildscript {
 }
 
 plugins {
-    id 'org.jetbrains.dokka' version '1.9.20'
+    id 'org.jetbrains.dokka' version '2.3.0'
     id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
 }
 
@@ -44,8 +44,8 @@ allprojects {
     }
 
     // Patch vulnerable transitive deps to clear the reported CVEs. Pulled in by test
-    // tooling (netty-codec-http via AGP/grpc-netty, bcprov-jdk18on via Robolectric);
-    // not included in the published AAR.
+    // tooling (netty-codec-http via AGP/grpc-netty, bcprov-jdk18on via Robolectric)
+    // and doc tooling (jackson-* via Dokka); not included in the published AAR.
     configurations.configureEach {
         resolutionStrategy.eachDependency { details ->
             if (details.requested.group == 'io.netty' && details.requested.name == 'netty-codec-http') {
@@ -53,6 +53,11 @@ allprojects {
             }
             if (details.requested.group == 'org.bouncycastle' && details.requested.name == 'bcprov-jdk18on') {
                 details.useVersion '1.85'
+            }
+            // Keep Jackson modules aligned on the patched release. jackson-annotations is
+            // published with a minor-only version since 2.20, so leave it as Dokka requests it.
+            if (details.requested.group.startsWith('com.fasterxml.jackson') && details.requested.name != 'jackson-annotations') {
+                details.useVersion '2.22.4'
             }
         }
     }
