@@ -13,8 +13,17 @@ import java.util.*
  * Writes dates in UTC with an explicit offset so they survive DST transitions and device
  * time zone changes. Dates written by older SDK versions (device local time with a literal
  * 'Z' suffix) are still read as local time to preserve their original meaning.
+ *
+ * Only meant for dates the SDK persists itself (e.g. stored credentials): any value ending in
+ * 'Z' is treated as that legacy local-time format, not as UTC.
+ *
+ * @param legacyTimeZone zone used to read legacy values. Captured once, like the formatter
+ * previously configured via `GsonBuilder.setDateFormat`, so a legacy value resolves to the same
+ * instant for the lifetime of the adapter even if the device time zone changes.
  */
-internal class DateTypeAdapter : TypeAdapter<Date>() {
+internal class DateTypeAdapter(
+    private val legacyTimeZone: TimeZone = TimeZone.getDefault()
+) : TypeAdapter<Date>() {
 
     override fun write(out: JsonWriter, value: Date?) {
         if (value == null) {
@@ -37,6 +46,16 @@ internal class DateTypeAdapter : TypeAdapter<Date>() {
         }
     }
 
+    @Throws(ParseException::class)
+    private fun parse(value: String): Date {
+        if (value.endsWith("Z")) {
+            val legacyFormatter = SimpleDateFormat(LEGACY_DATE_FORMAT, Locale.US)
+            legacyFormatter.timeZone = legacyTimeZone
+            return legacyFormatter.parse(value)
+        }
+        return SimpleDateFormat(DATE_FORMAT, Locale.US).parse(value)
+    }
+
     internal companion object {
         private const val DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         private const val LEGACY_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
@@ -45,12 +64,6 @@ internal class DateTypeAdapter : TypeAdapter<Date>() {
             val formatter = SimpleDateFormat(DATE_FORMAT, Locale.US)
             formatter.timeZone = TimeZone.getTimeZone("UTC")
             return formatter.format(date)
-        }
-
-        @Throws(ParseException::class)
-        fun parse(value: String): Date {
-            val pattern = if (value.endsWith("Z")) LEGACY_DATE_FORMAT else DATE_FORMAT
-            return SimpleDateFormat(pattern, Locale.US).parse(value)
         }
     }
 }

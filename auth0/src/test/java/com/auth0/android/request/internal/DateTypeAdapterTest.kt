@@ -4,6 +4,7 @@ import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.CredentialsMock
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonSyntaxException
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
@@ -57,8 +58,30 @@ public class DateTypeAdapterTest {
     public fun shouldReadLegacyFormatAsLocalTime() {
         // Older SDK versions wrote local wall-clock time followed by a literal 'Z'.
         // 2026-10-24T12:00 CEST is 10:00 UTC.
-        val parsed = gson.fromJson("\"2026-10-24T12:00:00.000Z\"", Date::class.java)
+        val parsed = gsonWithAdapter(DateTypeAdapter(AMSTERDAM))
+            .fromJson("\"2026-10-24T12:00:00.000Z\"", Date::class.java)
         assertThat(parsed, `is`(Date(1792836000000L)))
+    }
+
+    @Test
+    public fun shouldKeepReadingLegacyFormatInCapturedZoneAfterDefaultZoneChange() {
+        // Adapter created while the default zone is Europe/Amsterdam (see setUp)
+        val adapterGson = gsonWithAdapter(DateTypeAdapter())
+        val before = adapterGson.fromJson("\"2026-10-24T12:00:00.000Z\"", Date::class.java)
+        TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"))
+        val after = adapterGson.fromJson("\"2026-10-24T12:00:00.000Z\"", Date::class.java)
+        assertThat(before, `is`(Date(1792836000000L)))
+        assertThat(after, `is`(before))
+    }
+
+    @Test
+    public fun shouldReadLegacyValueInsideRepeatedDstHourOneHourLate() {
+        // Known limitation: the legacy format never stored the offset, so a local time in the
+        // repeated hour resolves to its second occurrence (CET), one hour after the real instant.
+        // It is corrected the next time the value is saved in the new format.
+        val parsed = gsonWithAdapter(DateTypeAdapter(AMSTERDAM))
+            .fromJson("\"2026-10-25T02:35:16.000Z\"", Date::class.java)
+        assertThat(parsed, `is`(Date(DST_REPEATED_HOUR_MS + ONE_HOUR_MS)))
     }
 
     @Test
@@ -97,8 +120,13 @@ public class DateTypeAdapterTest {
         assertThat(parsed.expiresAt, `is`(expiresAt))
     }
 
+    private fun gsonWithAdapter(adapter: DateTypeAdapter): Gson =
+        GsonBuilder().registerTypeAdapter(Date::class.java, adapter).create()
+
     private companion object {
         // 2026-10-25T00:35:16Z: inside the first occurrence of the repeated 02:00-03:00 hour in Europe/Amsterdam
         private const val DST_REPEATED_HOUR_MS = 1792888516000L
+        private const val ONE_HOUR_MS = 3600000L
+        private val AMSTERDAM: TimeZone = TimeZone.getTimeZone("Europe/Amsterdam")
     }
 }
