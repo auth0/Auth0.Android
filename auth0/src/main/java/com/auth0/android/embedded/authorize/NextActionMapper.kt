@@ -1,7 +1,14 @@
 package com.auth0.android.embedded.authorize
 
 import android.util.Log
+import com.auth0.android.embedded.passkey.AuthenticatorSelection
+import com.auth0.android.embedded.passkey.PasskeyCreationOptions
 import com.auth0.android.embedded.passkey.PasskeyRequestOptions
+import com.auth0.android.embedded.passkey.PasskeyUser
+import com.auth0.android.embedded.passkey.PublicKeyCredentialParameter
+import com.auth0.android.embedded.passkey.RelyingParty
+import com.auth0.android.embedded.passkey.ResidentKey
+import com.auth0.android.embedded.passkey.SignupPasskey
 import com.auth0.android.embedded.passkey.UserVerification
 import com.auth0.android.request.internal.GsonProvider
 
@@ -31,6 +38,17 @@ private const val PASSWORD_KEY = "password"
 private const val PASSWORD_COMPLEXITY_OPTIONS_KEY = "password_complexity_options"
 private const val MIN_LENGTH_KEY = "min_length"
 private const val CHARACTER_TYPES_KEY = "character_types"
+private const val PASSKEY_KEY = "passkey"
+private const val ID_KEY = "id"
+private const val RP_KEY = "rp"
+private const val USER_KEY = "user"
+private const val DISPLAY_NAME_KEY = "displayName"
+private const val PUB_KEY_CRED_PARAMS_KEY = "pubKeyCredParams"
+private const val TYPE_KEY = "type"
+private const val ALG_KEY = "alg"
+private const val AUTHENTICATOR_SELECTION_KEY = "authenticatorSelection"
+private const val RESIDENT_KEY_KEY = "residentKey"
+private const val PUBLIC_KEY_TYPE = "public-key"
 
 internal fun List<Map<String, Any>>.toNextActions(): List<NextAction> = mapNotNull { it.toNextAction() }
 
@@ -102,9 +120,9 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
         EmbeddedCapability.SIGNUP -> {
             val identifiers = (this[IDENTIFIERS_KEY] as? Map<*, *>)?.toSignupIdentifiers()
                 ?: return dropped(raw, IDENTIFIERS_KEY)
-            NextAction.Signup(identifiers, toPasswordRequirement())
+            NextAction.Signup(identifiers, toCredentialRequirement(PASSWORD_KEY), toCredentialRequirement(PASSKEY_KEY))
         }
-        EmbeddedCapability.CONFIRM_SIGNUP -> NextAction.ConfirmSignup(toSignupPassword())
+        EmbeddedCapability.CONFIRM_SIGNUP -> NextAction.ConfirmSignup(toSignupPassword(), toSignupPasskey())
         EmbeddedCapability.UNKNOWN -> NextAction.Unknown(raw)
     }
 }
@@ -127,17 +145,18 @@ private fun Map<*, *>.toSignupIdentifiers(): List<SignupIdentifier>? {
 }
 
 /**
- * Reads whether the signup action announces a password: `required: true` is [CredentialRequirement.REQUIRED],
- * `required: false` is [CredentialRequirement.OPTIONAL], and no password entry is [CredentialRequirement.NONE].
- * A password entry without a boolean `required` is logged and treated as [CredentialRequirement.NONE].
+ * Reads whether the signup action announces the [credential] (`password` or `passkey`) under
+ * `authentication_methods`: `required: true` is [CredentialRequirement.REQUIRED], `required: false` is
+ * [CredentialRequirement.OPTIONAL], and no entry is [CredentialRequirement.NONE]. An entry without a boolean
+ * `required` is logged and treated as [CredentialRequirement.NONE].
  */
-private fun Map<String, Any>.toPasswordRequirement(): CredentialRequirement {
-    val password = (this[AUTHENTICATION_METHODS_KEY] as? Map<*, *>)?.get(PASSWORD_KEY) ?: return CredentialRequirement.NONE
-    return when ((password as? Map<*, *>)?.get(REQUIRED_KEY) as? Boolean) {
+private fun Map<String, Any>.toCredentialRequirement(credential: String): CredentialRequirement {
+    val entry = (this[AUTHENTICATION_METHODS_KEY] as? Map<*, *>)?.get(credential) ?: return CredentialRequirement.NONE
+    return when ((entry as? Map<*, *>)?.get(REQUIRED_KEY) as? Boolean) {
         true -> CredentialRequirement.REQUIRED
         false -> CredentialRequirement.OPTIONAL
         null -> {
-            Log.w(TAG, "Ignoring signup password: required field \"$REQUIRED_KEY\" was missing or invalid.")
+            Log.w(TAG, "Ignoring signup $credential: required field \"$REQUIRED_KEY\" was missing or invalid.")
             CredentialRequirement.NONE
         }
     }
@@ -162,6 +181,52 @@ private fun Map<String, Any>.toSignupPassword(): SignupPassword? {
         ?.distinct()
         .orEmpty()
     return SignupPassword(required = false, complexity = SignupPasswordComplexity(minLength, characterTypes))
+}
+
+/**
+ * Reads the confirm action's `authn_params_public_key`, which the server sends when it offers to create a
+ * passkey. The result is `null` when it is absent, or when a required field is missing or invalid; the
+ * confirm action is kept either way, so the user can still finish without a passkey. Unknown entries of
+ * `pubKeyCredParams` are skipped, and an empty result is invalid. [SignupPasskey.requestJson] is the object
+ * as the server sent it.
+ */
+private fun Map<String, Any>.toSignupPasskey(): SignupPasskey? {
+    val params = this[AUTHN_PARAMS_PUBLIC_KEY_KEY] as? Map<*, *> ?: return null
+    fun invalid(field: String): SignupPasskey? {
+        Log.w(TAG, "Ignoring signup passkey: required field \"$AUTHN_PARAMS_PUBLIC_KEY_KEY.$field\" was missing or invalid.")
+        return null
+    }
+    val challenge = params[CHALLENGE_KEY] as? String ?: return invalid(CHALLENGE_KEY)
+    val timeout = (params[TIMEOUT_KEY] as? Number)?.toWholeLong() ?: return invalid(TIMEOUT_KEY)
+    val rp = (params[RP_KEY] as? Map<*, *>)?.let { map ->
+        RelyingParty(map[ID_KEY] as? String ?: return invalid(RP_KEY), map[NAME_KEY] as? String ?: return invalid(RP_KEY))
+    } ?: return invalid(RP_KEY)
+    val user = (params[USER_KEY] as? Map<*, *>)?.let { map ->
+        PasskeyUser(
+            map[ID_KEY] as? String ?: return invalid(USER_KEY),
+            map[NAME_KEY] as? String ?: return invalid(USER_KEY),
+            map[DISPLAY_NAME_KEY] as? String ?: return invalid(USER_KEY)
+        )
+    } ?: return invalid(USER_KEY)
+    val pubKeyCredParams = (params[PUB_KEY_CRED_PARAMS_KEY] as? List<*>)
+        ?.filterIsInstance<Map<*, *>>()
+        ?.mapNotNull { map ->
+            val type = map[TYPE_KEY] as? String
+            val alg = (map[ALG_KEY] as? Number)?.toWholeInt()
+            if (type == PUBLIC_KEY_TYPE && alg != null) PublicKeyCredentialParameter(type, alg) else null
+        }
+        ?.takeIf { it.isNotEmpty() }
+        ?: return invalid(PUB_KEY_CRED_PARAMS_KEY)
+    val selection = (params[AUTHENTICATOR_SELECTION_KEY] as? Map<*, *>)?.let { map ->
+        AuthenticatorSelection(
+            ResidentKey.fromValue(map[RESIDENT_KEY_KEY] as? String),
+            UserVerification.fromValue(map[USER_VERIFICATION_KEY] as? String)
+        )
+    } ?: return invalid(AUTHENTICATOR_SELECTION_KEY)
+    return SignupPasskey(
+        options = PasskeyCreationOptions(challenge, timeout, rp, user, pubKeyCredParams, selection),
+        requestJson = GsonProvider.gson.toJson(params)
+    )
 }
 
 private fun Number.toWholeInt(): Int? =

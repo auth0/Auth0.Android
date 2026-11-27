@@ -106,6 +106,10 @@ $actionsJson
         return this
     }
 
+    /** The recoverable `403` after a rejected signup passkey: rotated session and the confirm action again. */
+    fun willReturnPasskeyRegistrationFailed(confirm: String = NEXT_CONFIRM_SIGNUP_PASSKEY): EmbeddedAuthMockServer =
+        willReturnSignupPasswordError("passkey_registration_failed", confirm)
+
     fun willReturnTooManyResendAttempts(): EmbeddedAuthMockServer {
         server.enqueue(responseWithJSON("""{ "error": "access_denied", "error_description": "too_many_resend_attempts" }""", 403))
         return this
@@ -237,6 +241,10 @@ $actionsJson
         const val NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true } }, "authentication_methods": { "password": { "required": false } } }"""
         const val NEXT_CONFIRM_SIGNUP_PASSWORD = """{ "action": "action:signup:confirm:v1", "password_complexity_options": { "min_length": 8, "character_types": ["lowercase", "number"] } }"""
         const val NEXT_CONFIRM_SIGNUP = """{ "action": "action:signup:confirm:v1" }"""
+        const val NEXT_SIGNUP_EMAIL_PASSKEY_OPTIONAL = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true } }, "authentication_methods": { "passkey": { "required": false } } }"""
+        const val NEXT_SIGNUP_EMAIL_PASSWORD_AND_PASSKEY = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true } }, "authentication_methods": { "password": { "required": true }, "passkey": { "required": false } } }"""
+        const val NEXT_CONFIRM_SIGNUP_PASSKEY = """{ "action": "action:signup:confirm:v1", "authn_params_public_key": { "challenge": "Y3JlYXRl", "rp": { "id": "login.example.com", "name": "login.example.com" }, "user": { "id": "dXNlci1oYW5kbGU", "name": "jane@example.com", "displayName": "jane@example.com" }, "pubKeyCredParams": [ { "type": "public-key", "alg": -8 }, { "type": "public-key", "alg": -7 }, { "type": "public-key", "alg": -257 } ], "authenticatorSelection": { "residentKey": "required", "userVerification": "preferred" }, "timeout": 900000 } }"""
+        const val NEXT_CONFIRM_SIGNUP_PASSWORD_AND_PASSKEY = """{ "action": "action:signup:confirm:v1", "password_complexity_options": { "min_length": 8, "character_types": ["lowercase", "number"] }, "authn_params_public_key": { "challenge": "Y3JlYXRl", "rp": { "id": "login.example.com", "name": "login.example.com" }, "user": { "id": "dXNlci1oYW5kbGU", "name": "jane@example.com", "displayName": "jane@example.com" }, "pubKeyCredParams": [ { "type": "public-key", "alg": -8 }, { "type": "public-key", "alg": -7 }, { "type": "public-key", "alg": -257 } ], "authenticatorSelection": { "residentKey": "required", "userVerification": "preferred" }, "timeout": 900000 } }"""
         const val NEXT_VERIFY_PASSKEY = """{ "action": "action:verify:passkey:v1", "authn_params_public_key": { "challenge": "Y2hhbGxlbmdl", "timeout": 900000, "userVerification": "preferred", "rpId": "login.example.com" } }"""
         const val NEXT_VERIFY_PASSKEY_FRESH = """{ "action": "action:verify:passkey:v1", "authn_params_public_key": { "challenge": "ZnJlc2g", "timeout": 900000, "userVerification": "preferred", "rpId": "login.example.com" } }"""
         const val NEXT_UNKNOWN = """{ "action": "action:future:unknown:v1" }"""

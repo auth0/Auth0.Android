@@ -11,11 +11,15 @@ Each step before `confirmSignup` completes by throwing an `EmbeddedAuthException
 `SIGNUP` and `CONFIRM_SIGNUP` are in the default capabilities. To keep signup out of your app, pass
 a `capabilities` set to `authorize` that leaves them out.
 
+The account can be secured with a password, see [Signup with a password](#signup-with-a-password), or with a passkey,
+see [Signup with a passkey](signup-passkey.md). It is one or the other, never both.
+
 ```kotlin
 val embedded = EmbeddedAuthClient(Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN"))
 
 // 1. Start the flow. When the connection allows sign-ups, the next actions include NextAction.Signup.
-//    signup.passwordRequirement says whether the connection collects a password (NONE, OPTIONAL or REQUIRED).
+//    signup.passwordRequirement and signup.passkeyRequirement say whether the connection collects a password
+//    or offers a passkey (NONE, OPTIONAL or REQUIRED).
 try {
     embedded.authorize("Username-Password-Authentication").await()
 } catch (e: EmbeddedAuthException) {
@@ -90,7 +94,8 @@ steps are the same.
 ## Signup with a password
 
 When the connection collects a password, the account is created with it in the last step. The server offers
-`NextAction.ConfirmSignup` with its `password` set:
+`NextAction.ConfirmSignup` with its `password` set. If `ConfirmSignup.passkey` is also set, the user can choose a passkey
+instead of the password, see [Signup with a passkey](signup-passkey.md):
 
 - `password == null`: the connection doesn't collect a password. Don't ask for one.
 - `password != null`: show a password field. When `password.required` is `true` the user must enter one.

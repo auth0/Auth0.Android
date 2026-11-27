@@ -92,7 +92,7 @@ internal fun passkeyAuthnResponse(authenticationResponseJson: String): Map<Strin
     }
 }
 
-private fun JsonObject.requiredString(key: String, maxLength: Int, path: String = ""): String {
+internal fun JsonObject.requiredString(key: String, maxLength: Int, path: String = ""): String {
     val value = stringOrNull(key)
     if (value.isNullOrEmpty()) {
         throw InvalidPasskeyResponseException("The passkey response is missing \"$path$key\".")
@@ -103,7 +103,7 @@ private fun JsonObject.requiredString(key: String, maxLength: Int, path: String 
     return value
 }
 
-private fun JsonObject.stringOrNull(key: String): String? {
+internal fun JsonObject.stringOrNull(key: String): String? {
     val element: JsonElement = get(key) ?: return null
     return if (element.isJsonPrimitive && element.asJsonPrimitive.isString) element.asString else null
 }

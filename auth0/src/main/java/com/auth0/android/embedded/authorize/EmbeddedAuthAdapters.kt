@@ -37,6 +37,7 @@ private const val INVALID_PASSKEY = "invalid_passkey"
 private const val PASSWORD_REQUIRED = "password_required"
 private const val PASSWORD_NOT_ACCEPTED = "password_not_accepted"
 private const val INVALID_PASSWORD = "invalid_password"
+private const val PASSKEY_REGISTRATION_FAILED = "passkey_registration_failed"
 private const val TOO_MANY_RESEND_ATTEMPTS = "too_many_resend_attempts"
 private const val INVALID_GRANT = "invalid_grant"
 private const val INVALID_REQUEST = "invalid_request"
@@ -153,6 +154,7 @@ internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
             PASSWORD_REQUIRED -> EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_REQUIRED
             PASSWORD_NOT_ACCEPTED -> EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_NOT_ACCEPTED
             INVALID_PASSWORD -> EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSWORD
+            PASSKEY_REGISTRATION_FAILED -> EmbeddedAuthError.InsufficientAuthorization.Reason.PASSKEY_REGISTRATION_FAILED
             AUTHORIZATION_PENDING ->
                 EmbeddedAuthError.InsufficientAuthorization.Reason.AUTHORIZATION_PENDING
             SLOW_DOWN -> EmbeddedAuthError.InsufficientAuthorization.Reason.SLOW_DOWN

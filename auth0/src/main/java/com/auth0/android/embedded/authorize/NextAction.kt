@@ -2,7 +2,9 @@ package com.auth0.android.embedded.authorize
 
 import com.auth0.android.embedded.EmbeddedAuthClient
 import com.auth0.android.embedded.EmbeddedAuthException
+import com.auth0.android.embedded.passkey.PasskeyRegistration
 import com.auth0.android.embedded.passkey.PasskeyRequestOptions
+import com.auth0.android.embedded.passkey.SignupPasskey
 
 /** One way to continue the embedded authentication flow, as reported on [EmbeddedAuthException.nextActions]. */
 public sealed interface NextAction {
@@ -112,12 +114,15 @@ public sealed interface NextAction {
      * Continue by signing up a new user. Act on it with [EmbeddedAuthClient.signup].
      *
      * [identifiers] lists the identifiers the connection collects at signup. [passwordRequirement] says
-     * whether the connection collects a password, which is set up with [EmbeddedAuthClient.confirmSignup].
+     * whether the connection collects a password, and [passkeyRequirement] whether it offers to create a
+     * passkey. They are the two ways to secure the new account, and the user picks one:
+     * see [ConfirmSignup]. Both are set up with [EmbeddedAuthClient.confirmSignup].
      */
     @ConsistentCopyVisibility
     public data class Signup internal constructor(
         public val identifiers: List<SignupIdentifier>,
-        public val passwordRequirement: CredentialRequirement
+        public val passwordRequirement: CredentialRequirement,
+        public val passkeyRequirement: CredentialRequirement
     ) : NextAction {
         override val capability: EmbeddedCapability = EmbeddedCapability.SIGNUP
     }
@@ -126,12 +131,27 @@ public sealed interface NextAction {
      * Continue by creating the new user's account once the required identifiers are verified. Act on
      * it with [EmbeddedAuthClient.confirmSignup].
      *
-     * [password] is `null` when the connection doesn't collect a password. Otherwise the app should ask
-     * for one, and must when [SignupPassword.required] is `true`.
+     * The account is secured with a password or with a passkey, never both. The user picks one of the
+     * choices the offer carries:
+     *
+     * - [password] is `null` when the connection doesn't collect a password. Otherwise the app can ask for
+     * one, with [EmbeddedAuthClient.confirmSignup] taking a `String`.
+     * - [passkey] is `null` when this offer doesn't include creating a passkey. Otherwise the app can run
+     * the platform's passkey creation with [SignupPasskey.requestJson], and finish with
+     * [EmbeddedAuthClient.confirmSignup] taking a [PasskeyRegistration].
+     *
+     * When [SignupPassword.required] is `true`, the user must choose the password or the passkey. When the
+     * password is optional, or the connection collects none, the user can also choose neither, with
+     * [EmbeddedAuthClient.confirmSignup] and no password. A passkey replaces the password, so the SDK has no
+     * way to send both.
+     *
+     * Each offer decides on its own, so use the latest one and not [Signup.passkeyRequirement], which can
+     * differ from it.
      */
     @ConsistentCopyVisibility
     public data class ConfirmSignup internal constructor(
-        public val password: SignupPassword?
+        public val password: SignupPassword?,
+        public val passkey: SignupPasskey?
     ) : NextAction {
         override val capability: EmbeddedCapability = EmbeddedCapability.CONFIRM_SIGNUP
     }

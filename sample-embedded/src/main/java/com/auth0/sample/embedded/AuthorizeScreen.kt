@@ -51,6 +51,7 @@ import com.auth0.android.embedded.authorize.SignupPasswordComplexity
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.embedded.authorize.SignupPassword
 import com.auth0.android.embedded.authorize.SignupIdentifier
+import com.auth0.android.embedded.passkey.SignupPasskey
 import com.auth0.android.result.Credentials
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -256,7 +257,9 @@ private fun ActionsSection(
 
             is NextAction.ConfirmSignup -> ConfirmSignupCard(
                 password = action.password,
+                passkey = action.passkey,
                 onConfirm = { viewModel.confirmSignup(it) },
+                onPasskey = { viewModel.confirmSignupWithPasskey(it) },
             )
 
             is NextAction.Unknown -> InfoCard(
@@ -414,7 +417,12 @@ private fun VerifyPasswordCard(onVerify: (String) -> Unit) {
 }
 
 @Composable
-private fun ConfirmSignupCard(password: SignupPassword?, onConfirm: (String?) -> Unit) {
+private fun ConfirmSignupCard(
+    password: SignupPassword?,
+    passkey: SignupPasskey?,
+    onConfirm: (String?) -> Unit,
+    onPasskey: (String) -> Unit,
+) {
     var value by remember { mutableStateOf("") }
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -451,6 +459,10 @@ private fun ConfirmSignupCard(password: SignupPassword?, onConfirm: (String?) ->
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.action_confirm_signup))
+            }
+            if (passkey != null) {
+                Spacer(Modifier.height(8.dp))
+                SignupPasskeyButton(requestJson = passkey.requestJson, onRegistration = onPasskey)
             }
         }
     }
@@ -631,5 +643,6 @@ private fun EmbeddedAuthError.InsufficientAuthorization.Reason.messageRes(): Int
     EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSWORD -> R.string.error_invalid_password
     EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE -> R.string.error_invalid_identifier_or_code
     EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSKEY -> R.string.error_invalid_passkey
+    EmbeddedAuthError.InsufficientAuthorization.Reason.PASSKEY_REGISTRATION_FAILED -> R.string.error_passkey_registration_failed
     else -> null
 }

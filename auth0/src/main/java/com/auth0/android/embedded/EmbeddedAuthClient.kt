@@ -18,7 +18,10 @@ import com.auth0.android.embedded.authorize.authorizeCodeAdapter
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
 import com.auth0.android.embedded.passkey.InvalidPasskeyResponseException
 import com.auth0.android.embedded.passkey.PasskeyAssertion
+import com.auth0.android.embedded.passkey.PasskeyRegistration
+import com.auth0.android.embedded.passkey.SignupPasskey
 import com.auth0.android.embedded.passkey.passkeyAuthnResponse
+import com.auth0.android.embedded.passkey.passkeyRegistrationResponse
 import com.auth0.android.request.Request
 import com.auth0.android.request.internal.GsonAdapter
 import com.auth0.android.request.internal.GsonProvider
@@ -316,8 +319,13 @@ public class EmbeddedAuthClient private constructor(
      * Creates the new user's account and completes the flow. Call it when a
      * [NextAction.ConfirmSignup] is offered.
      *
+     * The account is secured with a password or with a passkey, never both. This method is the password
+     * choice, and also the choice of neither, when the password is optional or the connection collects none.
+     * To use a passkey, call the other [confirmSignup].
+     *
      * Pass a [password] when [NextAction.ConfirmSignup.password] is not `null`; it must be passed when
-     * [SignupPassword.required] is `true`. An empty [password] counts as none. It is sent as it is, and the
+     * [SignupPassword.required] is `true`, unless the account is created with a passkey by the other
+     * [confirmSignup]. An empty [password] counts as none. It is sent as it is, and the
      * SDK doesn't check it against [SignupPassword.complexity], which is advisory, or against the server's limit of
      * 2048 characters. A longer password is rejected with the terminal [EmbeddedAuthError.InvalidRequest].
      *
@@ -339,6 +347,50 @@ public class EmbeddedAuthClient private constructor(
         val sentPassword = password?.takeIf { it.isNotEmpty() }
         return terminalStep(EmbeddedCapability.CONFIRM_SIGNUP) {
             if (sentPassword != null) addParameter(PASSWORD_KEY, sentPassword)
+        }
+    }
+
+    /**
+     * Creates the new user's account with a passkey, once the required identifiers are verified.
+     *
+     * The account is secured with a password or with a passkey, never both, and this method is the passkey
+     * choice. It satisfies a required password too, so the user can pick it whether the password is required
+     * or optional.
+     *
+     * Call it when [NextAction.ConfirmSignup.passkey] is not `null`, with a [PasskeyRegistration] holding the
+     * `registrationResponseJson` the platform returned after creating the passkey for
+     * [SignupPasskey.requestJson]. Only the fields the server accepts are sent. A passkey replaces the
+     * password, so none is sent with it; to sign up with a password, or with neither, use the other
+     * [confirmSignup].
+     *
+     * On success, it yields the [Credentials]. If the server rejects the passkey, the request completes
+     * through [EmbeddedAuthException] with
+     * [EmbeddedAuthError.InsufficientAuthorization.Reason.PASSKEY_REGISTRATION_FAILED], and a new
+     * [NextAction.ConfirmSignup] that offers the same passkey options: create a passkey again, or finish
+     * with a password or, when the password isn't required, without a credential. If the server requires further steps,
+     * [EmbeddedAuthError.InsufficientAuthorization.nextActions] carry them. If the account can't be created,
+     * the request completes with the terminal [EmbeddedAuthError.InvalidRequest]; start a new flow with
+     * [authorize].
+     *
+     * A registration that doesn't match the server's schema completes with [EmbeddedAuthError.InvalidInput]
+     * without sending a request; the flow is unchanged. With no flow in progress it completes with
+     * [EmbeddedAuthError.NoActiveSession].
+     */
+    public fun confirmSignup(registration: PasskeyRegistration): Request<Credentials, EmbeddedAuthException> {
+        if (transactionState?.authSession == null) return noActiveSession()
+        val passkey = try {
+            passkeyRegistrationResponse(registration.registrationResponseJson)
+        } catch (e: InvalidPasskeyResponseException) {
+            return FailedRequest(
+                EmbeddedAuthException(
+                    INVALID_INPUT_ERROR,
+                    e.message ?: DEFAULT_INVALID_INPUT_DESCRIPTION,
+                    error = EmbeddedAuthError.InvalidInput
+                )
+            )
+        }
+        return terminalStep(EmbeddedCapability.CONFIRM_SIGNUP) {
+            addParameter(PASSKEY_KEY, passkey)
         }
     }
 
@@ -462,7 +514,7 @@ public class EmbeddedAuthClient private constructor(
     }
 
     private fun NextAction.ConfirmSignup.withRequired(required: Boolean): NextAction.ConfirmSignup =
-        NextAction.ConfirmSignup(password?.let { SignupPassword(required, it.complexity) })
+        copy(password = password?.let { SignupPassword(required, it.complexity) })
 
     private fun EmbeddedAuthException.withNextActions(
         nextActions: List<NextAction>,
@@ -498,6 +550,7 @@ public class EmbeddedAuthClient private constructor(
         private const val USERNAME_KEY = "username"
         private const val PASSWORD_KEY = "password"
         private const val AUTHN_RESPONSE_KEY = "authn_response"
+        private const val PASSKEY_KEY = "passkey"
         private const val DELIVERY_METHOD_KEY = "delivery_method"
         private const val OTP_KEY = "otp"
         private const val INDEX_KEY = "index"
