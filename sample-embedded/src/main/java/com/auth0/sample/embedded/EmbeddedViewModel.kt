@@ -13,6 +13,7 @@ import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.embedded.passkey.PasskeyAssertion
+import com.auth0.android.embedded.passkey.PasskeyRegistration
 import com.auth0.android.request.DefaultClient
 import com.auth0.android.result.Credentials
 import kotlinx.coroutines.Job
@@ -95,6 +96,13 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
      * password is rejected. Pass the password only when the confirm action offers one.
      */
     fun confirmSignup(password: String? = null): Unit = runTerminalStep { client.confirmSignup(password).await() }
+
+    /**
+     * Terminal step: creates the account with the passkey the platform just created, and yields credentials.
+     * Continues with the confirm action again if the passkey was rejected, or with MFA if the tenant requires it.
+     */
+    fun confirmSignupWithPasskey(registrationResponseJson: String): Unit =
+        runTerminalStep { client.confirmSignup(PasskeyRegistration(registrationResponseJson)).await() }
 
     /**
      * Polls for push approval. The SDK performs one poll per call, so the app owns the loop: wait the

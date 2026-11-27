@@ -9,7 +9,7 @@ import com.auth0.android.embedded.EmbeddedAuthClient
  */
 @ConsistentCopyVisibility
 public data class SignupPassword internal constructor(
-    /** Whether the account can't be created without a password. */
+    /** Whether the account can't be created without a password, unless it is created with a passkey. */
     public val required: Boolean,
 
     /** The advisory rules for the password. */

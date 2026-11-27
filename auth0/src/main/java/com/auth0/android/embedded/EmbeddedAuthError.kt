@@ -43,6 +43,12 @@ public sealed interface EmbeddedAuthError {
             /** The connection's password policy rejected the password. Retry with another one. */
             INVALID_PASSWORD,
 
+            /**
+             * The server rejected the passkey created at signup. The new [NextAction.ConfirmSignup] offers the same
+             * passkey options: create a passkey again, or finish with a password or without a credential.
+             */
+            PASSKEY_REGISTRATION_FAILED,
+
             /** Authorization is pending (e.g., push notification awaiting user approval). Retry after a delay. */
             AUTHORIZATION_PENDING,
 

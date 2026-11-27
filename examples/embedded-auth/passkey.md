@@ -17,7 +17,7 @@ identifies the user.
   - It serves `https://<rpId>/.well-known/assetlinks.json` with your app for the `delegate_permission/common.get_login_creds` relation. Credential Manager checks it, and without it the ceremony fails with `RP ID cannot be validated`.
   - It accepts a passkey only from an app it knows. A passkey from an app that isn't registered is rejected with `INVALID_PASSKEY`, even though the ceremony succeeded.
 
-- Android 9 (API 28) or later, which Credential Manager requires. `authorize` asks for passkeys by default, so on earlier versions pass a `capabilities` set that leaves out `EmbeddedCapability.VERIFY_PASSKEY`.
+- Android 9 (API 28) or later, which Credential Manager requires. `authorize` asks for passkey sign-in by default, so on earlier versions pass a `capabilities` set that leaves out `EmbeddedCapability.VERIFY_PASSKEY`. That setting covers sign-in only; see [Signup with a passkey](signup-passkey.md) for creating one.
 - The user signs in with a **discoverable** passkey, one that stores the user handle. A response without a `userHandle` is rejected with `EmbeddedAuthError.InvalidInput`.
 - Your app uses [Credential Manager](https://developer.android.com/identity/sign-in/credential-manager) to run the passkey ceremony. The SDK doesn't depend on it, so add it yourself:
 
@@ -28,7 +28,7 @@ dependencies {
 }
 ```
 
-To keep passkeys out of your app, pass a `capabilities` set to `authorize` that leaves out
+To keep passkey sign-in out of your app, pass a `capabilities` set to `authorize` that leaves out
 `EmbeddedCapability.VERIFY_PASSKEY`.
 
 ```kotlin

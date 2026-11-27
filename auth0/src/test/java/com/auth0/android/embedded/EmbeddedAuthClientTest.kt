@@ -13,6 +13,8 @@ import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.embedded.authorize.SignupIdentifier
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
 import com.auth0.android.embedded.passkey.PasskeyAssertion
+import com.auth0.android.embedded.passkey.PasskeyRegistration
+import com.auth0.android.embedded.passkey.ResidentKey
 import com.auth0.android.embedded.passkey.UserVerification
 import com.auth0.android.util.AlgorithmHelper
 import com.auth0.android.util.EmbeddedAuthMockServer
@@ -26,6 +28,7 @@ import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.instanceOf
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.Matchers.notNullValue
+import org.hamcrest.Matchers.nullValue
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
@@ -1728,7 +1731,7 @@ public class EmbeddedAuthClientTest {
 
         val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
 
-        assertThat(error.nextActions, `is`(listOf<NextAction>(NextAction.ConfirmSignup(null))))
+        assertThat(error.nextActions, `is`(listOf<NextAction>(NextAction.ConfirmSignup(null, null))))
         assertThat(error.nextActions[0].capability, `is`(EmbeddedCapability.CONFIRM_SIGNUP))
     }
 
@@ -1958,7 +1961,7 @@ public class EmbeddedAuthClientTest {
         assertThat(bodyOf(mockAPI.takeRequest()).getString("password"), `is`("Pa55word1"))
         val failure = error.error as EmbeddedAuthError.InsufficientAuthorization
         assertThat(failure.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_NOT_ACCEPTED))
-        assertThat(failure.nextActions, `is`(listOf<NextAction>(NextAction.ConfirmSignup(null))))
+        assertThat(failure.nextActions, `is`(listOf<NextAction>(NextAction.ConfirmSignup(null, null))))
     }
 
     @Test
@@ -2030,6 +2033,171 @@ public class EmbeddedAuthClientTest {
         assertThat(error.error, `is`(EmbeddedAuthError.TooManyResendAttempts))
         val followOn = assertEmbeddedErrorSuspending { client.challengeEmail().await() }
         assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    // ── signup passkey ──────────────────────────────────────────────────
+
+    @Test
+    public fun `authorize reports an offered signup passkey as optional`(): Unit = runTest {
+        val signup = firstSignupAction(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSKEY_OPTIONAL)
+
+        assertThat(signup.passkeyRequirement, `is`(CredentialRequirement.OPTIONAL))
+        assertThat(signup.passwordRequirement, `is`(CredentialRequirement.NONE))
+    }
+
+    @Test
+    public fun `authorize reports a password and a passkey offered together`(): Unit = runTest {
+        val signup = firstSignupAction(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_AND_PASSKEY)
+
+        assertThat(signup.passwordRequirement, `is`(CredentialRequirement.REQUIRED))
+        assertThat(signup.passkeyRequirement, `is`(CredentialRequirement.OPTIONAL))
+    }
+
+    @Test
+    public fun `authorize reports no signup passkey when none is offered`(): Unit = runTest {
+        val signup = firstSignupAction(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_REQUIRED)
+
+        assertThat(signup.passkeyRequirement, `is`(CredentialRequirement.NONE))
+    }
+
+    @Test
+    public fun `the confirm offer carries the passkey options`(): Unit = runTest {
+        val confirm = reachConfirm(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSKEY)
+
+        val options = confirm.passkey!!.options
+        assertThat(options.challenge, `is`("Y3JlYXRl"))
+        assertThat(options.timeout, `is`(900000L))
+        assertThat(options.rp.id, `is`("login.example.com"))
+        assertThat(options.authenticatorSelection.residentKey, `is`(ResidentKey.REQUIRED))
+        assertThat(confirm.password, `is`(nullValue()))
+    }
+
+    @Test
+    public fun `confirmSignup with a passkey POSTs only the allowed passkey fields, returns credentials and clears the session`(): Unit = runTest {
+        reachConfirm(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSKEY)
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        val credentials = client.confirmSignup(PasskeyRegistration(registrationJson())).await()
+
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        val raw = mockAPI.takeRequest().body.readUtf8()
+        val body = JSONObject(raw)
+        assertThat(body.keys().asSequence().toSet(), `is`(setOf("auth_session", "action", "client_id", "passkey")))
+        assertThat(body.getString("action"), `is`("action:signup:confirm:v1"))
+        assertThat(body.getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+        val passkey = body.getJSONObject("passkey")
+        assertThat(passkey.keys().asSequence().toSet(), `is`(setOf("id", "rawId", "type", "authenticatorAttachment", "clientExtensionResults", "response")))
+        assertThat(
+            passkey.getJSONObject("response").keys().asSequence().toSet(),
+            `is`(setOf("clientDataJSON", "attestationObject", "transports", "authenticatorData", "publicKeyAlgorithm", "publicKey"))
+        )
+        assertThat(raw, containsString("\"publicKeyAlgorithm\":-7"))
+        assertThat(raw, not(containsString("-7.0")))
+        val after = assertEmbeddedErrorSuspending { client.confirmSignup(PasskeyRegistration(registrationJson())).await() }
+        assertThat(after.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `confirmSignup with a passkey sends no password`(): Unit = runTest {
+        reachConfirm(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD_AND_PASSKEY)
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        client.confirmSignup(PasskeyRegistration(registrationJson())).await()
+
+        assertThat(bodyOf(mockAPI.takeRequest()).has("password"), `is`(false))
+    }
+
+    @Test
+    public fun `confirmSignup with a passkey reports no active session before checking the registration`(): Unit = runTest {
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup(PasskeyRegistration("""{"id":"a"}""")).await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.NoActiveSession))
+        assertThat(mockAPI.server.requestCount, `is`(0))
+    }
+
+    @Test
+    public fun `confirmSignup with an invalid passkey registration sends no request and keeps the session`(): Unit = runTest {
+        reachConfirm(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSKEY)
+        val sentBefore = mockAPI.server.requestCount
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup(PasskeyRegistration("""{"id":"a"}""")).await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.InvalidInput))
+        assertThat(error.code, `is`("invalid_input"))
+        assertThat(mockAPI.server.requestCount, `is`(sentBefore))
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        client.confirmSignup(PasskeyRegistration(registrationJson())).await()
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+    }
+
+    @Test
+    public fun `passkey_registration_failed re-offers the same passkey options and rotates the session`(): Unit = runTest {
+        reachConfirm(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSKEY)
+        mockAPI.willReturnPasskeyRegistrationFailed()
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup(PasskeyRegistration(registrationJson())).await() }
+        mockAPI.takeRequest()
+
+        val failure = error.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(failure.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.PASSKEY_REGISTRATION_FAILED))
+        assertThat((failure.nextActions[0] as NextAction.ConfirmSignup).passkey!!.options.challenge, `is`("Y3JlYXRl"))
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        client.confirmSignup(PasskeyRegistration(registrationJson())).await()
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION))
+    }
+
+    @Test
+    public fun `after a rejected passkey the user can finish with a password instead`(): Unit = runTest {
+        reachConfirm(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD_AND_PASSKEY)
+        mockAPI.willReturnPasskeyRegistrationFailed(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD_AND_PASSKEY)
+        assertEmbeddedErrorSuspending { client.confirmSignup(PasskeyRegistration(registrationJson())).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        client.confirmSignup("Pa55word1").await()
+
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.getString("password"), `is`("Pa55word1"))
+        assertThat(body.has("passkey"), `is`(false))
+    }
+
+    @Test
+    public fun `a password error keeps the passkey options on the re-offered confirm`(): Unit = runTest {
+        reachConfirm(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD_AND_PASSKEY)
+        mockAPI.willReturnSignupPasswordError("invalid_password", EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSWORD_AND_PASSKEY)
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup("weak").await() }
+        mockAPI.takeRequest()
+
+        val confirm = (error.error as EmbeddedAuthError.InsufficientAuthorization).nextActions[0] as NextAction.ConfirmSignup
+        assertThat(confirm.passkey!!.options.challenge, `is`("Y3JlYXRl"))
+        assertThat(confirm.password!!.complexity.minLength, `is`(8))
+    }
+
+    @Test
+    public fun `a malformed passkey offer leaves the confirm without a passkey`(): Unit = runTest {
+        val confirm = reachConfirm("""{ "action": "action:signup:confirm:v1", "authn_params_public_key": { "challenge": "c" } }""")
+
+        assertThat(confirm.passkey, `is`(nullValue()))
+    }
+
+    @Test
+    public fun `confirmSignup with a passkey keeps the session on a 5xx so it can be retried`(): Unit = runTest {
+        reachConfirm(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP_PASSKEY)
+        mockAPI.willReturnPlainTextError()
+
+        assertEmbeddedErrorSuspending { client.confirmSignup(PasskeyRegistration(registrationJson())).await() }
+        mockAPI.takeRequest()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        client.confirmSignup(PasskeyRegistration(registrationJson())).await()
+
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
     }
 
     // ── verifyPasskey ────────────────────────────────────────────────────────────
@@ -2270,6 +2438,18 @@ public class EmbeddedAuthClientTest {
         assertThat("expected EmbeddedAuthException", error, `is`(notNullValue()))
         return error!!
     }
+
+    /** Signs up with an email, verifies it, and returns the confirm offer the server answers with. */
+    private suspend fun reachConfirm(confirmOffer: String): NextAction.ConfirmSignup {
+        establishSignupSession(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_PASSWORD_AND_PASSKEY)
+        mockAPI.willReturnContinuationWith(confirmOffer)
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+        mockAPI.takeRequest()
+        return error.nextActions[0] as NextAction.ConfirmSignup
+    }
+
+    private fun registrationJson(): String =
+        """{"id":"credential-id","rawId":"credential-raw-id","type":"public-key","authenticatorAttachment":"platform","clientExtensionResults":{"credProps":{"rk":true}},"response":{"clientDataJSON":"client-data","attestationObject":"attestation","transports":["internal"],"authenticatorData":"authenticator-data","publicKeyAlgorithm":-7,"publicKey":"public-key-bytes"}}"""
 
     private fun passkeyAssertion(
         attachment: String? = "platform",

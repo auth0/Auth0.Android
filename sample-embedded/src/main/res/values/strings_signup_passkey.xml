@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_create_passkey">Create a passkey instead</string>
+    <string name="error_create_passkey_failed">The passkey couldn\'t be created. Try again, or continue without it.</string>
+    <string name="error_passkey_registration_failed">That passkey wasn\'t accepted. Create another one, or continue without it.</string>
+</resources>
