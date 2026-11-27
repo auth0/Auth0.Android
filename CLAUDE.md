@@ -135,3 +135,7 @@ A PR touching public API, config, or integration patterns is not complete until 
 | `EXAMPLES.md` + `examples/` | `EXAMPLES.md` is an index; each feature has its own file under `examples/` with full Kotlin + Java usage |
 
 See [references/docs-update.md](references/docs-update.md) for the full code-to-docs mapping. Read before finalizing any public API PR.
+
+## Agent Skills
+
+For task-specific integration guidance (setup, login, credentials, MFA, passkeys, organizations, custom token exchange), read [`skills/SKILL.md`](skills/SKILL.md) and its sub-skills. They are not packaged in the AAR; consumers read them from the GitHub repo (`auth0/Auth0.Android`, `skills/`). Keep them in sync with `README.md` and `examples/` when public API changes.
