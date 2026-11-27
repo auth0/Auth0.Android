@@ -12,7 +12,8 @@ import java.util.*
 /**
  * Writes dates in UTC with an explicit offset so they survive DST transitions and device
  * time zone changes. Dates written by older SDK versions (device local time with a literal
- * 'Z' suffix) are still read as local time to preserve their original meaning.
+ * 'Z' suffix) are still read as local time to preserve their original meaning. Such a value
+ * inside a repeated DST hour is ambiguous and reads one hour late until it is saved again.
  *
  * Only meant for dates the SDK persists itself (e.g. stored credentials): any value ending in
  * 'Z' is treated as that legacy local-time format, not as UTC.
