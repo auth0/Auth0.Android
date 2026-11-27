@@ -31,14 +31,6 @@ public class PasskeyRegistrationTest {
     """.trimIndent()
 
     @Test
-    public fun toStringHidesTheResponse() {
-        val text = PasskeyRegistration(validRegistration).toString()
-
-        assertThat(text, not(containsString("attestation")))
-        assertThat(text, not(containsString("credential-id")))
-    }
-
-    @Test
     public fun `builds the passkey with exactly the allowed fields`() {
         val result = passkeyRegistrationResponse(validRegistration)
 

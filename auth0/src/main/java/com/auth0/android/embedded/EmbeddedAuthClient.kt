@@ -77,8 +77,7 @@ public class EmbeddedAuthClient private constructor(
      * exchange to return an ID token; defaults to `"openid profile email offline_access"`.
      * @param audience optional API audience to request an access token for.
      * @param capabilities the set of steps this client can handle in the flow. Defaults to every step the
-     * SDK models. [EmbeddedCapability.VERIFY_PASSKEY] covers passkey sign-in only: the server decides on
-     * offering a passkey at signup from the connection, so leaving it out doesn't hide that offer.
+     * SDK models.
      */
     @JvmOverloads
     public fun authorize(
